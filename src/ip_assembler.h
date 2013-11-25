@@ -19,6 +19,7 @@
 #define WANT_ETH_FRAME          -1      ///< Some more eth frames are needed to assembly ip frame
 #define NEXT_ETH_FRAME          -2      ///< Some more eth frames will be generated from the ip frame
 #define UNSUPPORTED_IP_FRAME    -3
+#define DEST_ADDR_RESOLVE_ERROR -4
 
 
 /// Assembler's context structure
@@ -27,9 +28,14 @@ typedef struct IPASM_st
     int     session_id;
     char    self_hw_addr[MAX_IFS][MAC_ADDR_SIZE];
     int     ifs_count; // Interfaces count
-    ip_frame_t *empty_ip_frame;
-    int ip_frame_assembly_offset;
-    // ???
+    union
+    {
+        ip_frame_t *empty_ip_frame;
+        const ip_frame_t *src_ip_frame;
+    };
+    int ip_frame_offset;
+    char    dest_hw_addr[MAC_ADDR_SIZE];
+    
 } IPASM;
 
 

@@ -22,7 +22,7 @@ struct eth_frame
     char    src_mac[MAC_ADDR_SIZE];
     char    ether_type[2];              // 0x86DD == IPv6
     char    payload[ETH_MAX_FRAME_SIZE];
-    int     check_seq   : 32;
+    long    check_seq   : 32;
     // char    idle[12];
     
     size_t  payload_size; // Helper field, skip it while sending the frame
