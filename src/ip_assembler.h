@@ -12,15 +12,23 @@
 #include "ip_common.h"
 #include "eth_common.h"
 
+
+#define MAX_IFS 64 // Max interface count
+
 // Errors
-#define WANT_ETH_FRAME      -1      ///< Some more eth frames are needed to assembly ip frame
-#define NEXT_ETH_FRAME      -2      ///< Some more eth frames will be generated from the ip frame
+#define WANT_ETH_FRAME          -1      ///< Some more eth frames are needed to assembly ip frame
+#define NEXT_ETH_FRAME          -2      ///< Some more eth frames will be generated from the ip frame
+#define UNSUPPORTED_IP_FRAME    -3
 
 
 /// Assembler's context structure
 typedef struct IPASM_st
 {
-    int im_empty;
+    int     session_id;
+    char    self_hw_addr[MAX_IFS][MAC_ADDR_SIZE];
+    int     ifs_count; // Interfaces count
+    ip_frame_t *empty_ip_frame;
+    int ip_frame_assembly_offset;
     // ???
 } IPASM;
 
@@ -29,7 +37,7 @@ typedef struct IPASM_st
  * Creates new IPASM structure, initializes it and returns its pointer.
  * Should be freed with IPASM_free/1 later on.
  */
-IPASM *IPASM_new();
+IPASM *IPASM_new(int session_id);
 
 /**
  * Initializes IP frame assembly process (eth frames -> ip frame).

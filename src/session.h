@@ -9,9 +9,10 @@
 #ifndef TCP_IP_Stack_session_h
 #define TCP_IP_Stack_session_h
 
-#define DEFAULT_PROTOCOL    0
-#define TCP_PROTOCOL        1
-#define UDP_PROTOCOL        2
+
+#define TCP_PROTOCOL        0x06
+#define UDP_PROTOCOL        0x11
+#define DEFAULT_PROTOCOL    UDP_PROTOCOL
 
 /// Initializes socket
 /// Protocol shall be either TCP_PROTOCOL or UDP_PROTOCOL

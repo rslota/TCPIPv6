@@ -27,11 +27,12 @@ struct ip_frame
     int     version             : 4;
     int     traffic_class       : 8;
     int     flow_label          : 20;
-    int     payload_len         : 16;
+    int     payload_size        : 16;
     int     next_header         : 8;
     int     hop_limit           : 8;
     char    src_addr[IP_ADDR_SIZE];
     char    dest_addr[IP_ADDR_SIZE];
+    // We do NOT support extension headers
     
     // IP payload
     char    payload[IP_MAX_FRAME_SIZE];
