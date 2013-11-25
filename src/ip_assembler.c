@@ -101,7 +101,7 @@ int IPASM_consume_eth(IPASM *ctx, const eth_frame_t *frame)
         return WANT_ETH_FRAME;
     
     size_t copy_size = sizeof(ip_frame_t) - ctx->ip_frame_assembly_offset;
-    if((frame->payload_size < copy_size)
+    if(frame->payload_size < copy_size)
        copy_size = frame->payload_size;
        
     memcpy(ctx->empty_ip_frame + ctx->ip_frame_assembly_offset, frame->payload, copy_size);

@@ -7,6 +7,11 @@ set(TCPIPStack_VERSION_MINOR 1)
 set(TCPIPStack_VERSION_PATCH 1)
 set(TCPIPStack_VERSION $(TCPIPStack_VERSION_MAJOR).$(TCPIPStack_VERSION_MINOR).$(TCPIPStack_VERSION_PATCH))
 
+add_definitions(
+    -std=c11 
+    -g
+)
+
 add_subdirectory(src)
 
 add_library(tcpip_stack SHARED ${PROJECT_SOURCE_DIR}/src/session.c)

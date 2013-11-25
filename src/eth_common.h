@@ -9,6 +9,8 @@
 #ifndef TCP_IP_Stack_eth_common_h
 #define TCP_IP_Stack_eth_common_h
 
+#include <string.h>
+
 #define MAC_ADDR_SIZE       6
 #define ETH_MAX_FRAME_SIZE  1500
 #define IPv6_ETHER_TYPE     0x86DD
