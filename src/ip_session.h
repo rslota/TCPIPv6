@@ -11,6 +11,9 @@
 
 #include "ip_common.h"
 
+#define IP_PAYLOAD_TO_BIG           -1;
+#define IP_FRAME_ASSEBLY_ERROR      -2;
+
 /**
  * Sends IP frame with given data to specified host.
  * @param session_id Session identifier returned by session/1 function 

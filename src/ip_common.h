@@ -18,7 +18,8 @@
 
 #define IP_MAX_FRAME_SIZE   1280
 
-#define IP_ADDR_SIZE    16
+#define IP_ADDR_SIZE        16
+#define IP_PACKET_LIFETIME  64
 
 
 struct ip_frame
