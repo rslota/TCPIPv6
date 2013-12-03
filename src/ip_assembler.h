@@ -2,18 +2,14 @@
 //  ip_assembler.h
 //  TCP-IP Stack
 //
-//  Created by Rafał Słota on 25.11.2013.
 //  Copyright (c) 2013 Rafał Słota, Konrad Zemek. All rights reserved.
 //
 
 #ifndef TCP_IP_Stack_ip_assembler_h
 #define TCP_IP_Stack_ip_assembler_h
 
-#include "ip_common.h"
-#include "eth_common.h"
 
-
-#define MAX_IFS 64 // Max interface count
+#include <linux/if_ether.h>
 
 // Errors
 #define WANT_ETH_FRAME          -1      ///< Some more eth frames are needed to assembly ip frame
@@ -21,12 +17,16 @@
 #define UNSUPPORTED_IP_FRAME    -3
 #define DEST_ADDR_RESOLVE_ERROR -4
 
+struct ip_frame;
+typedef struct ip_frame ip_frame_t;
+
+struct eth_frame;
+typedef struct eth_frame eth_frame_t;
 
 /// Assembler's context structure
-typedef struct IPASM_st
+struct IPASM_st
 {
     int     session_id;
-    char    self_hw_addr[MAX_IFS][MAC_ADDR_SIZE];
     int     ifs_count; // Interfaces count
     union
     {
@@ -34,10 +34,11 @@ typedef struct IPASM_st
         const ip_frame_t *src_ip_frame;
     };
     int ip_frame_offset;
-    char    dest_hw_addr[MAC_ADDR_SIZE];
-    
-} IPASM;
+    char dest_hw_addr[ETH_ALEN];
 
+};
+
+typedef struct IPASM_st IPASM;
 
 /**
  * Creates new IPASM structure, initializes it and returns its pointer.
@@ -47,7 +48,7 @@ IPASM *IPASM_new(int session_id);
 
 /**
  * Initializes IP frame assembly process (eth frames -> ip frame).
- * @param frame Pointer to empty ip_frame struct which shall be filled with newly 
+ * @param frame Pointer to empty ip_frame struct which shall be filled with newly
  * assembled ip frame
  * @return 0 on success
  */

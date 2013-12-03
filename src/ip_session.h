@@ -2,21 +2,20 @@
 //  ip_session.h
 //  TCP-IP Stack
 //
-//  Created by Rafał Słota on 25.11.2013.
 //  Copyright (c) 2013 Rafał Słota, Konrad Zemek. All rights reserved.
 //
 
 #ifndef TCP_IP_Stack_ip_session_h
 #define TCP_IP_Stack_ip_session_h
 
-#include "ip_common.h"
 
 #define IP_PAYLOAD_TO_BIG           -1;
-#define IP_FRAME_ASSEBLY_ERROR      -2;
+#define IP_FRAME_ASSEMBLY_ERROR     -2;
+#define NETWORK_SEND_ERROR          -3;
 
 /**
  * Sends IP frame with given data to specified host.
- * @param session_id Session identifier returned by session/1 function 
+ * @param session_id Session identifier returned by session/1 function
  * @param dest_adder Destination IPv6 address
  * @param payload Data to be send
  * @param payload_size Size of payload array

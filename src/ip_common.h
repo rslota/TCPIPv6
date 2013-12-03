@@ -2,7 +2,6 @@
 //  ip.h
 //  TCP-IP Stack
 //
-//  Created by Rafał Słota on 25.11.2013.
 //  Copyright (c) 2013 Rafał Słota, Konrad Zemek. All rights reserved.
 //
 
@@ -16,11 +15,10 @@
 // So if we don't want to implement "Packet too Big" ICMPv6 control messages, we need to limit IP frame size to 1280B.
 // Also we should ignore "Fragmentation extension header" - using it in end-to-end fragmenation is pointless.
 
-#define IP_MAX_FRAME_SIZE   1280
-
+#define IP_MAX_PACKET_SIZE 1280
+#define IP_MAX_DATA_SIZE   1240
 #define IP_ADDR_SIZE        16
 #define IP_PACKET_LIFETIME  64
-
 
 struct ip_frame
 {
@@ -34,10 +32,10 @@ struct ip_frame
     char    src_addr[IP_ADDR_SIZE];
     char    dest_addr[IP_ADDR_SIZE];
     // We do NOT support extension headers
-    
+
     // IP payload
-    char    payload[IP_MAX_FRAME_SIZE];
-};
+    char    payload[IP_MAX_DATA_SIZE];
+} __attribute__((packed));
 
 typedef struct ip_frame ip_frame_t;
 

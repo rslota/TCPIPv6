@@ -2,7 +2,6 @@
 //  session.h
 //  TCP-IP Stack
 //
-//  Created by Rafał Słota on 25.11.2013.
 //  Copyright (c) 2013 Rafał Słota, Konrad Zemek. All rights reserved.
 //
 
@@ -14,9 +13,11 @@
 #define UDP_PROTOCOL        0x11
 #define DEFAULT_PROTOCOL    UDP_PROTOCOL
 
+extern int ifindex;
+
 /// Initializes socket
 /// Protocol shall be either TCP_PROTOCOL or UDP_PROTOCOL
-int session(int protocol);
+int session(int protocol, const char *iface);
 
 /// Closes the socket
 int destroy(int session_id);
