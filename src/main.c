@@ -1,15 +1,17 @@
-#include "ip_session.h"
-
+#include "ethernet.h"
 #include "session.h"
 
+#include <stdint.h>
 #include <string.h>
 
-int main(void)
-{
-    const char *destination_addr = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-    const char *payload = "hello world!";
-    const int session_id = session(DEFAULT_PROTOCOL, "eth0");
-    while(ip_send(session_id, destination_addr, payload, strlen(payload)) == 0);
-    destroy(session_id);
-    return 0;
+int main(void) {
+    const char *ifname = "eth0";
+    const uint8_t dst_addr[] = { 0x33, 0x33, 0x0, 0x0, 0x0, 0x0 };
+    const char *data = "Hello world!";
+    const size_t data_len = strlen(data);
+
+    session_t *session = session_open(ifname);
+    const int ret = eth_send(session, dst_addr, (const uint8_t*)data, data_len);
+    session_close(session);
+    return ret;
 }

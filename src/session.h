@@ -1,26 +1,22 @@
-//
-//  session.h
-//  TCP-IP Stack
-//
-//  Copyright (c) 2013 Rafał Słota, Konrad Zemek. All rights reserved.
-//
-
-#ifndef TCP_IP_Stack_session_h
-#define TCP_IP_Stack_session_h
+#ifndef TCPIPStack_session_details_h
+#define TCPIPStack_session_details_h
 
 
-#define TCP_PROTOCOL        0x06
-#define UDP_PROTOCOL        0x11
-#define DEFAULT_PROTOCOL    UDP_PROTOCOL
+#include "common.h"
 
-extern int ifindex;
+#include <stdint.h>
 
-/// Initializes socket
-/// Protocol shall be either TCP_PROTOCOL or UDP_PROTOCOL
-int session(int protocol, const char *iface);
+typedef struct session
+{
+    int ifindex;
+    uint8_t src_addr[ETH_ADDR_LEN];
+    int sock_desc;
 
-/// Closes the socket
-int destroy(int session_id);
+} session_t;
+
+session_t *session_open(const char *ifname);
+
+int session_close(session_t *session);
 
 
 #endif

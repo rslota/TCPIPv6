@@ -1,56 +1,51 @@
-//
-//  session.c
-//  TCP-IP Stack
-//
-//  Created by Rafał Słota on 25.11.2013.
-//  Copyright (c) 2013 Rafał Słota, Konrad Zemek. All rights reserved.
-//
-
 #include "session.h"
 
 #include <arpa/inet.h>
-#include <sys/ioctl.h>
 #include <net/if.h>
-#include <unistd.h>
-#include <linux/if_ether.h>
-#include <linux/if_packet.h>
-#include <sys/types.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
-#include <stdlib.h>
 #include <memory.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
+#include <stdlib.h>
 
-int ifindex;
-
-/// @todo: error handling
-int session(int protocol, const char *iface)
+session_t *session_open(const char *ifname)
 {
-    const int fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_IPV6));
+    session_t *s = malloc(sizeof(session_t));
+    if(s == NULL)
+        return 0;
 
-    // Find interface index
+    s->sock_desc = socket(PF_PACKET, SOCK_RAW, htons(ETH_PROTOCOL_IPV6));
+    if(s->sock_desc == -1)
+    {
+        free(s);
+        return 0;
+    }
+
     struct ifreq ifreq;
-    memset(&ifreq, 0, sizeof(ifreq));
-    strncpy(ifreq.ifr_name, iface, IFNAMSIZ);
-    ioctl(fd, SIOCGIFINDEX, &ifreq);
-    ifindex = ifreq.ifr_ifindex;
+    memset(&ifreq, 0, sizeof(struct ifreq));
+    strncpy(ifreq.ifr_name, ifname, IFNAMSIZ);
 
-    // // Bind to the interface
-    // struct sockaddr_ll addr;
-    // memset(&addr, 0, sizeof(addr));
-    // addr.sll_protocol = htons(ETH_P_IPV6);
-    // addr.sll_ifindex = ifreq.ifr_ifindex;
-    // int t = bind(fd, (struct sockaddr*) &addr, sizeof(addr));
-    // int k = errno;
+    if(ioctl(s->sock_desc, SIOCGIFINDEX, &ifreq) == -1)
+    {
+        free(s);
+        return 0;
+    }
+    s->ifindex = ifreq.ifr_ifindex;
 
-    // printf("Binding to device %s (%d)", ifreq.ifr_name, ifreq.ifr_ifindex);
+    if(ioctl(s->sock_desc, SIOCGIFHWADDR, &ifreq) == -1)
+    {
+        free(s);
+        return 0;
+    }
+    memcpy(s->src_addr, ifreq.ifr_hwaddr.sa_data, ETH_ADDR_LEN);
 
-    return fd;
+    return s;
 }
 
-int destroy(int session_id)
+int session_close(session_t *session)
 {
-    return close(session_id);
+    const int err = close(session->sock_desc);
+    free(session);
+    return err;
 }
