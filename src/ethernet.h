@@ -16,12 +16,17 @@
 
 /**
  * Send data through the ethernet layer, to the hardware layer.
- * @returns number of bytes of data parameter that were sent sent.
- * @note A value less than ETH_DATA_MIN_LEN indicates an error. The errno value
- * will contain the error code.
+ * @returns number of bytes of data that were sent on success, 0 on error.
  */
 size_t eth_send(session_t *session, const uint8_t dst_addr[],
                 const uint8_t data[], size_t data_len);
 
+/**
+ * Receive data from the hardware layer, through the ethernet layer.
+ * @param data The array to which the data will be written. Its length should
+ * be at least ETH_DATA_MAX_LEN.
+ * @returns number of bytes received, 0 on error.
+ */
+size_t eth_recv(session_t *session, uint8_t data[]);
 
 #endif
