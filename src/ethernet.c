@@ -11,10 +11,10 @@ typedef union PACKED eth_frame
 {
     struct PACKED
     {
-        uint8_t dst_addr[ETH_ADDR_LEN];
-        uint8_t src_addr[ETH_ADDR_LEN];
+        uint8_t  dst_addr[ETH_ADDR_LEN];
+        uint8_t  src_addr[ETH_ADDR_LEN];
         uint16_t ether_type;
-        uint8_t data[ETH_DATA_MAX_LEN];
+        uint8_t  data[ETH_DATA_MAX_LEN];
     };
 
     uint8_t buffer[ETH_FRAME_MAX_LEN];
@@ -24,6 +24,9 @@ typedef union PACKED eth_frame
 size_t eth_send(session_t *session, const uint8_t dst_addr[],
                 const uint8_t data[], size_t data_len)
 {
+    // We can send maximum of ETH_DATA_MAX_LEN bytes of data.
+    data_len = MIN(data_len, ETH_DATA_MAX_LEN);
+
     eth_frame_t frame;
 
     // Set the header
@@ -31,8 +34,7 @@ size_t eth_send(session_t *session, const uint8_t dst_addr[],
     memcpy(frame.src_addr, session->src_addr, ETH_ADDR_LEN);
     frame.ether_type = htons(ETH_PROTOCOL_IPV6);
 
-    // Set the data. We can send maximum of ETH_DATA_MAX_LEN bytes of data.
-    data_len = MIN(data_len, ETH_DATA_MAX_LEN);
+    // Set the data.
     memset(frame.data, 0, ETH_DATA_MIN_LEN);
     memcpy(frame.data, data, data_len);
 

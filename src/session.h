@@ -1,5 +1,5 @@
-#ifndef TCPIPStack_session_details_h
-#define TCPIPStack_session_details_h
+#ifndef TCPIPStack_session_h
+#define TCPIPStack_session_h
 
 
 #include "common.h"
@@ -9,6 +9,7 @@
 typedef struct session
 {
     uint8_t src_addr[ETH_ADDR_LEN];
+    uint8_t src_ip[IP_ADDR_LEN];
     int sock_desc;
 
 } session_t;
@@ -17,7 +18,7 @@ typedef struct session
  * Opens the session.
  * @returns pointer to the created session on success, 0 on error.
  */
-session_t *session_open(const char *ifname);
+session_t *session_open(const char *ifname, const uint8_t src_ip[]);
 
 /**
  * Closes the session.

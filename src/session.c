@@ -12,7 +12,7 @@
 
 #include <errno.h>
 
-session_t *session_open(const char *ifname)
+session_t *session_open(const char *ifname, const uint8_t src_ip[])
 {
     // We request kernel to pass us only frames with protocol set to IPv6.
     // We could filter out non-IP packets manually as well, so it doesn't really
@@ -51,6 +51,9 @@ session_t *session_open(const char *ifname)
         return 0;
     }
     memcpy(s->src_addr, ifreq.ifr_hwaddr.sa_data, ETH_ADDR_LEN);
+
+    // Set interface's IP addr
+    memcpy(s->src_ip, src_ip, IP_ADDR_LEN);
 
     // Prepare the sockaddr_ll struct for binding
     struct sockaddr_ll addr;
