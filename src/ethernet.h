@@ -25,7 +25,7 @@ size_t eth_send(session_t *session, const uint8_t dst_addr[],
  * Receive data from the hardware layer, through the ethernet layer.
  * @param data The array to which the data will be written. Its length should
  * be at least ETH_DATA_MAX_LEN.
- * @returns number of bytes received, 0 on error.
+ * @returns number of bytes written into data array, 0 on error.
  */
 size_t eth_recv(session_t *session, uint8_t data[]);
 

@@ -1,28 +1,68 @@
 #include "ip.h"
-#include "ethernet.h"
 #include "session.h"
 
+#include <arpa/inet.h>
+
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 #include <stddef.h>
 
 int main(void) {
-    const char *ifname = "lo";
-    const uint8_t dst_ip[] = { 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33 };
-    const uint8_t src_ip[] = { 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33,
-        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33 };
-    const char *data = "Hello world!";
-    const size_t data_len = strlen(data);
+    char ifname[1024] = "lo";
+    uint8_t dst_ip[] = { 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9 };
+    uint8_t src_ip[] = { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 };
 
-    session_t *session = session_open(ifname, src_ip);
-    const size_t ret = ip_send(session, dst_ip, (const uint8_t*) data, data_len);
+    printf("Options:\n");
+    printf("\tbind  <ifname>\t- bind to the interface ifname\n");
+    printf("\tsrcip <ipv6>  \t- set the source ip (format: aa::aa::aa::...)\n");
+    printf("\tdstip <ipv6>  \t- set the destination ip (format: aa::aa::..)\n");
+    printf("\tsend <text>   \t- send a packet containing text\n");
+    printf("\trecv          \t- wait for a packet and print out its data\n");
 
-    uint8_t buffer[ETH_DATA_MAX_LEN];
-    for(size_t read = 0; (read = eth_recv(session, buffer));)
-        printf("Received %lu bytes of data\n", read);
+    while(true)
+    {
+        printf("> ");
 
-    session_close(session);
-    return ret;
+        char buffer[1024];
+        scanf("%s", buffer);
+        if(strcmp(buffer, "bind") == 0)
+        {
+            scanf("%s", ifname);
+        }
+        else if(strcmp(buffer, "srcip") == 0)
+        {
+            scanf("%s", buffer);
+            inet_pton(AF_INET6, buffer, src_ip);
+        }
+        else if(strcmp(buffer, "dstip") == 0)
+        {
+            scanf("%s", buffer);
+            inet_pton(AF_INET6, buffer, src_ip);
+        }
+        else if(strcmp(buffer, "send") == 0)
+        {
+            // Get line
+            fgets(buffer, sizeof(buffer), stdin);
+            ungetc('\n', stdin);
+
+            session_t *session = session_open(ifname, src_ip);
+            ip_send(session, dst_ip, (uint8_t*) buffer, strlen(buffer));
+            session_close(session);
+        }
+        else if(strcmp(buffer, "recv") == 0)
+        {
+            session_t *session = session_open(ifname, src_ip);
+            ip_recv(session, (uint8_t*) buffer);
+            session_close(session);
+
+            printf("Received data: %s", buffer);
+        }
+
+        // Flush stdin
+        scanf("%*[^\n]\n");
+    }
+
+    return 0;
 }
