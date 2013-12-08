@@ -1,4 +1,5 @@
 #include "ip.h"
+#include "ethernet.h"
 #include "session.h"
 
 #include <stdint.h>
@@ -18,9 +19,9 @@ int main(void) {
     session_t *session = session_open(ifname, src_ip);
     const size_t ret = ip_send(session, dst_ip, (const uint8_t*) data, data_len);
 
-    // uint8_t buffer[ETH_DATA_MAX_LEN];
-    // for(size_t read = 0; (read = eth_recv(session, buffer));)
-    //     printf("Received %lu bytes of data\n", read);
+    uint8_t buffer[ETH_DATA_MAX_LEN];
+    for(size_t read = 0; (read = eth_recv(session, buffer));)
+        printf("Received %lu bytes of data\n", read);
 
     session_close(session);
     return ret;

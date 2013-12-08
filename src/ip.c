@@ -57,8 +57,20 @@ size_t ip_send(session_t *session, const uint8_t dst_addr[],
     if(ip_to_hw(dst_addr, dst_hw_addr) != 0)
         return 0;
 
-    const size_t packet_len = IP_HEADER_LEN + data_len;
-    const size_t sent = eth_send(session, dst_hw_addr, packet.buffer, packet_len);
+    size_t data_left = data_len;
+    size_t sent = 0;
+    do
+    {
+        // We always send the header
+        const size_t packet_len = IP_HEADER_LEN + data_left;
+        sent = eth_send(session, dst_hw_addr, packet.buffer, packet_len);
+        data_left -= sent;
 
-    return sent == packet_len ? data_len : 0;
+        // Move unsent data to the packet data beginning
+        if(sent)
+            memmove(packet.data, packet.data + sent, data_left);
+
+    } while(sent != 0 && data_left != 0);
+
+    return data_left == 0 ? data_len : 0;
 }
