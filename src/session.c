@@ -12,7 +12,7 @@
 
 #include <errno.h>
 
-session_t *session_open(const char *ifname, const uint8_t src_ip[])
+session_t *session_open(const char *interface, const uint8_t src_ip[], uint16_t port, protocol_t protocol);
 {
     // We request kernel to pass us only frames with protocol set to IPv6.
     // We could filter out non-IP packets manually as well, so it doesn't really
