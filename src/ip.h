@@ -14,7 +14,7 @@
  * Send data through the ip layer, to the ethernet layer.
  * @returns number of bytes of data that were sent on success, 0 on error.
  */
-size_t ip_send(session_t *session, const uint8_t dst_addr[],
+size_t ip_send(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
                const uint8_t data[], size_t data_len);
 
 /**
@@ -24,5 +24,19 @@ size_t ip_send(session_t *session, const uint8_t dst_addr[],
  * @returns number of bytes written into data array, 0 on error.
  */
 size_t ip_recv(session_t *session, uint8_t data[]);
+
+/**
+ * Calculate the checksum used by some transport layer protocols.
+ * @param protocol the protocol number corresponding to the used transport
+ * layer protocol.
+ * @param ip_data the whole payload of the resulting IP packet, except any
+ * extension headers; the checksum field must be 0. The data needs to be in the
+ * network byte order.
+ * @returns the calculated checksum to place in transport layer's header; the
+ * checksum is already in the network byte order.
+ */
+uint16_t ip_chksum(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
+                   uint8_t data[], size_t data_len);
+
 
 #endif
