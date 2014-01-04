@@ -1,8 +1,6 @@
 #include "ethernet.h"
 
-#include <arpa/inet.h>
-#include <netpacket/packet.h>
-#include <sys/socket.h>
+#include "external.h"
 
 #include <assert.h>
 #include <memory.h>
@@ -32,7 +30,7 @@ size_t eth_send(session_t *session, const uint8_t dst_addr[],
     // Set the header
     memcpy(frame.dst_addr, dst_addr, ETH_ADDR_LEN);
     memcpy(frame.src_addr, session->src_addr, ETH_ADDR_LEN);
-    frame.ether_type = htons(ETH_PROTOCOL_IPV6);
+    frame.ether_type = network_s(ETH_PROTOCOL_IPV6);
 
     // Set the data.
     memset(frame.data, 0, ETH_DATA_MIN_LEN);
@@ -40,7 +38,7 @@ size_t eth_send(session_t *session, const uint8_t dst_addr[],
 
     // Send the frame. We can send minimum of ETH_FRAME_MIN_LEN bytes.
     const size_t frame_len = MAX(ETH_FRAME_MIN_LEN, ETH_HEADER_LEN + data_len);
-    const size_t sent = send(session->sock_desc, frame.buffer, frame_len, 0);
+    const size_t sent = hw_send(session->session_id, frame.buffer, frame_len);
 
     return sent == frame_len ? data_len : 0;
 }
@@ -49,9 +47,8 @@ size_t eth_recv(session_t *session, uint8_t data[])
 {
     eth_frame_t frame;
 
-    // Receive the frame. System will always send us the full frame.
-    const size_t frame_len = recv(session->sock_desc, frame.buffer,
-                                  sizeof(frame.buffer), 0);
+    const size_t frame_len = hw_recv(session->session_id, frame.buffer,
+                                     sizeof(frame.buffer));
 
     if(frame_len == (size_t)-1)
         return 0;

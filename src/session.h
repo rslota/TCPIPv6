@@ -8,18 +8,18 @@
 
 typedef struct session
 {
+    int session_id;
     uint8_t src_addr[ETH_ADDR_LEN];
     uint8_t src_ip[IP_ADDR_LEN];
     uint8_t protocol;
     uint16_t port;
-    int sock_desc;
 
 } session_t;
 
 typedef enum protocol
 {
 	TCP = IP_PROTOCOL_TCP,
-	UDP = IP_PROTOCOL_UDPs
+	UDP = IP_PROTOCOL_UDP
 } protocol_t;
 
 /**

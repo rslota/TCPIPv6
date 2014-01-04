@@ -2,8 +2,7 @@
 
 #include "common.h"
 #include "ethernet.h"
-
-#include <arpa/inet.h>
+#include "external.h"
 
 #include <memory.h>
 
@@ -44,9 +43,9 @@ size_t ip_send(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
 
     // Prepare the packet
     ip_packet_t packet;
-    packet.flow = htonl(0);
+    packet.flow = 0;
     packet.version = 0x60;
-    packet.payload_length = htons(data_len);
+    packet.payload_length = network_s(data_len);
     packet.next_header = protocol;
     packet.hop_limit = 64;
     memcpy(packet.src_ip, session->src_ip, IP_ADDR_LEN);
@@ -124,7 +123,7 @@ uint16_t ip_chksum(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
     pseudo_packet_t packet;
     memcpy(packet.src_ip, session->src_ip, IP_ADDR_LEN);
     memcpy(packet.dst_ip, dst_ip, IP_ADDR_LEN);
-    packet.upper_layer_packet_len = htonl(data_len);
+    packet.upper_layer_packet_len = network_l(data_len);
     memset(packet.zeros, 0, sizeof(packet.zeros));
     packet.next_header = protocol;
     memcpy(packet.data, data, data_len);
