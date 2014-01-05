@@ -2,13 +2,17 @@
 #define TCPIPStack_ip_h
 
 
-#include "session.h"
+#include "common.h"
 
+#include <stdint.h>
 #include <stddef.h>
 
 #define IP_HEADER_LEN 40
 #define IP_PACKET_MAX_LEN 1280
 #define IP_DATA_MAX_LEN (IP_PACKET_MAX_LEN - IP_HEADER_LEN)
+#define IP_PROTOCOL_ICMP 1
+#define IP_PROTOCOL_TCP  6
+#define IP_PROTOCOL_UDP  17
 
 /**
  * Send data through the ip layer, to the ethernet layer.

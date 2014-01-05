@@ -1,4 +1,4 @@
-#include "external.h"
+#include "hw.h"
 
 #include "common.h"
 
@@ -12,7 +12,7 @@
 #include <memory.h>
 #include <string.h>
 
-int hw_session_open(const char interface[])
+int hw_init(const char interface[])
 {
 	// We request kernel to pass us only frames with protocol set to IPv6.
     // We could filter out non-IP packets manually as well, so it doesn't really
@@ -31,7 +31,7 @@ int hw_session_open(const char interface[])
     // Get interface's index
     if(ioctl(sock_desc, SIOCGIFINDEX, &ifreq) == -1)
     {
-        hw_session_close(sock_desc);
+        hw_free(sock_desc);
         return -1;
     }
 
@@ -45,14 +45,14 @@ int hw_session_open(const char interface[])
     // Bind the socket to the interface
     if(bind(sock_desc, (struct sockaddr*) &addr, sizeof(addr)) == -1)
     {
-    	hw_session_close(sock_desc);
+    	hw_free(sock_desc);
     	return -1;
     }
 
     return sock_desc;
 }
 
-int hw_interface_addr(int session_id, const char interface[], uint8_t addr[])
+int hw_if_addr(int session_id, const char interface[], uint8_t addr[])
 {
     // Create ifreq object to fetch details about our network interface
     struct ifreq ifreq;
@@ -67,7 +67,7 @@ int hw_interface_addr(int session_id, const char interface[], uint8_t addr[])
     return 0;
 }
 
-int hw_session_close(int session_id)
+int hw_free(int session_id)
 {
 	return close(session_id);
 }
@@ -82,12 +82,12 @@ size_t hw_recv(int session_id, uint8_t buffer[], size_t buffer_len)
 	return recv(session_id, buffer, buffer_len, 0);
 }
 
-int16_t network_s(int16_t value)
+int16_t netb_s(int16_t value)
 {
 	return htons(value);
 }
 
-int32_t network_l(int32_t value)
+int32_t netb_l(int32_t value)
 {
 	return htonl(value);
 }

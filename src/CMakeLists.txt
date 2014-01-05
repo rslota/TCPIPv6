@@ -1,7 +1,8 @@
 add_executable( test
-    main.c
-    ethernet.c
-    external.c
+    hw.c
+    eth.c
     ip.c
-    session.c
+    tcp.c
+    net.c
+    main.c
 )

@@ -1,8 +1,7 @@
-#include "ethernet.h"
+#include "eth.h"
 
-#include "external.h"
+#include "hw.h"
 
-#include <assert.h>
 #include <memory.h>
 
 typedef union PACKED eth_frame
@@ -30,7 +29,7 @@ size_t eth_send(session_t *session, const uint8_t dst_addr[],
     // Set the header
     memcpy(frame.dst_addr, dst_addr, ETH_ADDR_LEN);
     memcpy(frame.src_addr, session->src_addr, ETH_ADDR_LEN);
-    frame.ether_type = network_s(ETH_PROTOCOL_IPV6);
+    frame.ether_type = netb_s(ETH_PROTOCOL_IPV6);
 
     // Set the data.
     memset(frame.data, 0, ETH_DATA_MIN_LEN);

@@ -1,6 +1,6 @@
 #include "ip.h"
-#include "session.h"
-#include "external.h"
+#include "net.h"
+#include "hw.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -30,9 +30,9 @@ void send_udp_dummy(session_t *session, const uint8_t dst_ip[])
     uint16_t datagram_len = 8 + strlen("Hello world!") + 1;
     strcpy((char*) datagram.data, "Hello world!");
 
-    datagram.src_port = network_s(2048);
-    datagram.dst_port = network_s(55096);
-    datagram.datagram_len = network_s(datagram_len);
+    datagram.src_port = netb_s(2048);
+    datagram.dst_port = netb_s(55096);
+    datagram.datagram_len = netb_s(datagram_len);
     datagram.checksum = 0;
 
     datagram.checksum = ip_chksum(session, dst_ip, IP_PROTOCOL_UDP,
@@ -47,9 +47,9 @@ int main(void) {
     uint8_t dst_ip[] = { 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9 };
     uint8_t src_ip[] = { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 };
 
-    session_t *session = session_open(ifname, src_ip, 2048, UDP);
+    session_t *session = net_init(ifname, src_ip, 2048, UDP);
     send_udp_dummy(session, dst_ip);
-    session_close(session);
+    net_free(session);
 
     // printf("Options:\n");
     // printf("\tbind  <ifname>\t- bind to the interface ifname\n");

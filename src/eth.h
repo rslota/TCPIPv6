@@ -3,7 +3,6 @@
 
 
 #include "common.h"
-#include "session.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -28,5 +27,6 @@ size_t eth_send(session_t *session, const uint8_t dst_addr[],
  * @returns number of bytes written into data array, 0 on error.
  */
 size_t eth_recv(session_t *session, uint8_t data[]);
+
 
 #endif
