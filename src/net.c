@@ -2,7 +2,7 @@
 
 #include "hw.h"
 #include "ip.h"
-#include "tcp.h"
+#include "udp.h"
 
 #include <memory.h>
 #include <stdlib.h>
@@ -52,14 +52,14 @@ int net_free(session_t *session)
     return err;
 }
 
-size_t net_send(session_t *session, const uint8_t data[], size_t data_len)
+size_t net_send(session_t *session, const uint8_t dst_ip[], uint16_t dst_port, const uint8_t data[], size_t data_len)
 {
     switch(session->protocol)
     {
         case TCP:
-            return tcp_send(session, data, data_len);
-        case UDP:
             return 0;
+        case UDP:
+            return udp_send(session, dst_ip, dst_port, data, data_len);
         default:
             return 0;
     }
@@ -70,9 +70,9 @@ size_t net_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
     switch(session->protocol)
     {
         case TCP:
-            return tcp_recv(session, buffer, buffer_len);
-        case UDP:
             return 0;
+        case UDP:
+            return udp_recv(session, buffer, buffer_len);
         default:
             return 0;
     }

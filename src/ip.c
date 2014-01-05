@@ -34,6 +34,8 @@ static int ip_to_hw(const uint8_t ip_addr[], uint8_t hw_addr[])
     return 0;
 }
 
+/// @todo datagram fragmentation (fragment extension headers, support datagrams
+/// of size 2^16-1)
 size_t ip_send(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
                const uint8_t data[], size_t data_len)
 {
@@ -75,16 +77,17 @@ size_t ip_send(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
     return data_left == 0 ? data_len : 0;
 }
 
-size_t ip_recv(session_t *session, uint8_t data[])
+/// @todo defragmentation
+size_t ip_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
 {
     ip_packet_t packet;
 
-    const size_t packet_len = eth_recv(session, packet.buffer);
-    if(packet_len == 0)
+    const size_t received = eth_recv(session, packet.buffer);
+    if(received == 0)
         return 0;
 
-    const size_t data_len = packet_len - IP_HEADER_LEN;
-    memcpy(data, packet.data, data_len);
+    const size_t data_len = MIN(received - IP_HEADER_LEN, buffer_len);
+    memcpy(buffer, packet.data, data_len);
 
     return data_len;
 }
