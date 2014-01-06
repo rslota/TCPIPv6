@@ -34,8 +34,6 @@ static int ip_to_hw(const uint8_t ip_addr[], uint8_t hw_addr[])
     return 0;
 }
 
-/// @todo datagram fragmentation (fragment extension headers, support datagrams
-/// of size 2^16-1)
 size_t ip_send(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
                const uint8_t data[], size_t data_len)
 {
@@ -65,7 +63,10 @@ size_t ip_send(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
     return sent == packet_len ? 0 : data_len;
 }
 
-/// @todo defragmentation
+/**
+ * @todo discard packets which are not directed to our IP address (to be done
+ * after NDP implementation, as for now it's convenient for test purposes)
+ */
 size_t ip_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
 {
     ip_packet_t packet;
@@ -82,6 +83,11 @@ size_t ip_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
 
 #define PSEUDO_PACKET_HEADER_LEN (2 * IP_ADDR_LEN + 8)
 
+/**
+ * @todo copying the whole packet data in order to calculate the checksum is far
+ * from the most efficient implementation, but it's one of the most convenient
+ * ones.
+ */
 typedef union PACKED pseudo_packet
 {
     struct PACKED
@@ -98,15 +104,17 @@ typedef union PACKED pseudo_packet
 
 } pseudo_packet_t;
 
+/**
+ * @todo grossly inefficient. It's better to accumulate in uint32_t value, and
+ * continue adding first 2 bytes to last 2 bytes until the first 2 bytes are 0
+ * (which is at most 2 times).
+ */
 static uint16_t add_with_carry(uint16_t acc, uint16_t val)
 {
     // The condition in ternary op checks for overflow without casting.
     return (acc + val) + (acc > UINT16_MAX - val ? 1 : 0);
 }
 
-/* @TODO Copying the whole packet data in order to calculate the checksum is far
- * from the most efficient implementation, but it's one of the most convenient
- * ones. */
 uint16_t ip_chksum(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
                    uint8_t data[], size_t data_len)
 {

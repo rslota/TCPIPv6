@@ -41,7 +41,7 @@ size_t udp_send(session_t *session, const uint8_t dst_ip[], uint16_t dst_port,
                    datagram_len);
 }
 
-/// @todo check checksum
+/// @todo checksum verification
 size_t udp_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
 {
     udp_datagram_t datagram;
