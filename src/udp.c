@@ -49,8 +49,7 @@ size_t udp_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
     do
     {
         received = ip_recv(session, datagram.buffer, sizeof(datagram.buffer));
-        printf("UDP received: %d\n", datagram.dst_port);
-    } while(received != 0 && datagram.dst_port != session->port);
+    } while(received != 0 && datagram.dst_port != netb_s(session->port));
 
     const size_t data_len = MIN(received - UDP_HEADER_LEN, buffer_len);
     memcpy(buffer, datagram.data, data_len);

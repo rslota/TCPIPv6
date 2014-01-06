@@ -66,10 +66,11 @@ int main(void) {
             }
 
             session_t *session = net_init(ifname, src_ip, port, UDP);
-            net_recv(session, (uint8_t*) buffer, sizeof(buffer));
+            size_t recv = net_recv(session, (uint8_t*) buffer, sizeof(buffer));
             net_free(session);
 
-            printf("Received data: %s", buffer);
+            buffer[recv] = 0;
+            printf("Received data: '%s'\n", buffer);
         }
 
         // Flush stdin
