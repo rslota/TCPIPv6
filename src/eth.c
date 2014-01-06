@@ -22,7 +22,8 @@ size_t eth_send(session_t *session, const uint8_t dst_addr[],
                 const uint8_t data[], size_t data_len)
 {
     // We can send maximum of ETH_DATA_MAX_LEN bytes of data.
-    data_len = MIN(data_len, ETH_DATA_MAX_LEN);
+    if(data_len > ETH_DATA_MAX_LEN)
+        return 0;
 
     eth_frame_t frame;
 

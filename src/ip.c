@@ -39,8 +39,9 @@ static int ip_to_hw(const uint8_t ip_addr[], uint8_t hw_addr[])
 size_t ip_send(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
                const uint8_t data[], size_t data_len)
 {
-    // We can send maximum of IP_DATA_MAX_LEN
-    data_len = MIN(data_len, IP_DATA_MAX_LEN);
+    // We can send maximum of IP_DATA_MAX_LEN bytes of data.
+    if(data_len > IP_DATA_MAX_LEN)
+        return 0;
 
     // Prepare the packet
     ip_packet_t packet;
@@ -57,24 +58,11 @@ size_t ip_send(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
     if(ip_to_hw(dst_ip, dst_hw_addr) != 0)
         return 0;
 
-    size_t data_left = data_len;
-    size_t sent = 0;
-    do
-    {
-        // We always send the header
-        const size_t packet_len = IP_HEADER_LEN + data_left;
-        sent = eth_send(session, dst_hw_addr, packet.buffer, packet_len);
+    const size_t packet_len = IP_HEADER_LEN + data_len;
+    const size_t sent = eth_send(session, dst_hw_addr, packet.buffer,
+                                 packet_len);
 
-        const size_t data_sent = sent - IP_HEADER_LEN;
-        data_left -= data_sent;
-
-        // Move unsent data to the beginning of packet's data
-        if(data_sent)
-            memmove(packet.data, packet.data + sent, data_left);
-
-    } while(sent != 0 && data_left != 0);
-
-    return data_left == 0 ? data_len : 0;
+    return sent == packet_len ? 0 : data_len;
 }
 
 /// @todo defragmentation
@@ -129,6 +117,13 @@ uint16_t ip_chksum(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
     memset(packet.zeros, 0, sizeof(packet.zeros));
     packet.next_header = protocol;
     memcpy(packet.data, data, data_len);
+
+    // Pad the data with 0s so that data_len is even
+    if(data_len % 2 != 0)
+    {
+        packet.data[data_len] = 0;
+        data_len += 1;
+    }
 
     uint32_t acc = 0;
     for(int i = 0; i < (PSEUDO_PACKET_HEADER_LEN + data_len)/2; ++i)

@@ -17,7 +17,8 @@ typedef enum protocol
  * Opens the session.
  * @returns pointer to the created session on success, 0 on error.
  */
-session_t *net_init(const char *interface, const uint8_t src_ip[], uint16_t port, protocol_t protocol);
+session_t *net_init(const char *interface, const uint8_t src_ip[],
+                    uint16_t port, protocol_t protocol);
 
 /**
  * Closes the session.
@@ -25,7 +26,8 @@ session_t *net_init(const char *interface, const uint8_t src_ip[], uint16_t port
  */
 int net_free(session_t *session);
 
-size_t net_send(session_t *session, const uint8_t dst_ip[], uint16_t dst_port, const uint8_t data[], size_t data_len);
+size_t net_send(session_t *session, const uint8_t dst_ip[], uint16_t dst_port,
+                const uint8_t data[], size_t data_len);
 
 size_t net_recv(session_t *session, uint8_t buffer[], size_t buffer_len);
 
