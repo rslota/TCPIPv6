@@ -10,7 +10,8 @@
 typedef enum protocol
 {
 	TCP,
-	UDP
+	UDP,
+    ICMP
 } protocol_t;
 
 /**

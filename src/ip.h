@@ -10,9 +10,9 @@
 #define IP_HEADER_LEN     40
 #define IP_PACKET_MAX_LEN 1280
 #define IP_DATA_MAX_LEN   (IP_PACKET_MAX_LEN - IP_HEADER_LEN)
-#define IP_PROTOCOL_ICMP  1
-#define IP_PROTOCOL_TCP   6
-#define IP_PROTOCOL_UDP   17
+#define IP_PROTOCOL_ICMP  0x3A
+#define IP_PROTOCOL_TCP   0x06
+#define IP_PROTOCOL_UDP   0x11
 
 /**
  * Send data through the ip layer, to the ethernet layer.
@@ -39,7 +39,7 @@ size_t ip_recv(session_t *session, uint8_t buffer[], const size_t buffer_len);
  * checksum is already in the network byte order.
  */
 uint16_t ip_chksum(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
-                   uint8_t data[], size_t data_len);
+                   const uint8_t data[], size_t data_len);
 
 
 #endif

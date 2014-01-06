@@ -1,8 +1,9 @@
 #include "ip.h"
+#include "icmp.h"
+#include "net.h"
 
 #include "eth.h"
 #include "hw.h"
-
 #include <memory.h>
 
 typedef union PACKED ip_packet
@@ -27,10 +28,55 @@ typedef union PACKED ip_packet
 
 } ip_packet_t;
 
-static int ip_to_hw(const uint8_t ip_addr[], uint8_t hw_addr[])
+static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr[])
 {
-    static uint8_t addr[] = { 0x33, 0x33, 0x0, 0x0, 0x0, 0x0 };
-    memcpy(hw_addr, addr, ETH_ADDR_LEN);
+    // Multicast addr case:
+    if(ip_addr[0] == 0xff)
+    {   
+        static uint8_t multicast_addr[] = { 0x33, 0x33, 0x0, 0x0, 0x0, 0x0 };
+
+        uint8_t flags = (ip_addr[1] & 0xf0) >> 4;
+        uint8_t scope = (ip_addr[1] & 0x0f);
+        printf("Multicast addr transate. Flags: %d, Scope: %d\n", flags, scope);
+
+        memcpy(multicast_addr + 2, ip_addr + IP_ADDR_LEN - 4, 4); // Multicast mapping: http://tools.ietf.org/html/rfc2464#page-4
+        memcpy(hw_addr, multicast_addr, ETH_ADDR_LEN);
+
+        return 0;
+    }
+
+    session_t *icmp_session = net_init(session->interface, session->src_ip, 0, ICMP);
+    ndp_neighbor_discover_t ndp;
+    size_t recv;
+    ndp_solicitate_send(icmp_session, ip_addr);
+    
+    while( (recv = ndp_advertisement_recv(icmp_session, &ndp) ) > 0)
+    {
+        if( netb_l( ndp.reserved ) & 1 << 30)
+            break;
+    }
+
+    printf("Jest git !\n");
+
+    if(!recv)
+        return 0;
+
+    ndp_option_t option;
+    memcpy(option.buffer, ndp.options, recv - offsetof(ndp_neighbor_discover_t, options));
+    if(option.type != NDP_TARGET_LINK_ADDR_OPT || option.len != 1) 
+    {
+        fprintf(stderr, "Error: unsupported option type for NDP protocol: %d with len: %d\n", option.type, option.len);
+        return 0;
+    } 
+    
+    net_free(icmp_session);
+
+    memcpy(hw_addr, option.body, ETH_ADDR_LEN);
+
+    printf("DEBUG: NDP returned hw_addr: %02x:%02x:%02x:%02x:%02x:%02x for ip_addr: %04x::%04x::%04x::%04x::%04x::%04x::%04x::%04x\n", 
+        hw_addr[0], hw_addr[1], hw_addr[2], hw_addr[3], hw_addr[4], hw_addr[5], 
+        ((uint16_t*)ip_addr)[0], ((uint16_t*)ip_addr)[1], ((uint16_t*)ip_addr)[2], ((uint16_t*)ip_addr)[3], ((uint16_t*)ip_addr)[4], ((uint16_t*)ip_addr)[5], ((uint16_t*)ip_addr)[6], ((uint16_t*)ip_addr)[7]);
+
     return 0;
 }
 
@@ -47,20 +93,21 @@ size_t ip_send(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
     packet.version = 0x60;
     packet.payload_length = netb_s(data_len);
     packet.next_header = protocol;
-    packet.hop_limit = 64;
+    packet.hop_limit = 255;
     memcpy(packet.src_ip, session->src_ip, IP_ADDR_LEN);
     memcpy(packet.dst_ip, dst_ip, IP_ADDR_LEN);
     memcpy(packet.data, data, data_len);
 
+
     uint8_t dst_hw_addr[ETH_ADDR_LEN];
-    if(ip_to_hw(dst_ip, dst_hw_addr) != 0)
+    if(ip_to_hw(session, dst_ip, dst_hw_addr) != 0)
         return 0;
 
     const size_t packet_len = IP_HEADER_LEN + data_len;
     const size_t sent = eth_send(session, dst_hw_addr, packet.buffer,
                                  packet_len);
 
-    return sent == packet_len ? 0 : data_len;
+    return sent == packet_len ? data_len : 0;
 }
 
 /**
@@ -71,7 +118,14 @@ size_t ip_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
 {
     ip_packet_t packet;
 
-    const size_t received = eth_recv(session, packet.buffer);
+    size_t received; 
+    // Skip all packets that don't match the session's protocol
+    while( (received = eth_recv(session, packet.buffer)) > 0 )
+    {
+        if(packet.next_header == session->protocol)
+            break;
+    }
+
     if(received == 0)
         return 0;
 
@@ -116,7 +170,7 @@ static uint16_t add_with_carry(uint16_t acc, uint16_t val)
 }
 
 uint16_t ip_chksum(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
-                   uint8_t data[], size_t data_len)
+                   const uint8_t data[], size_t data_len)
 {
     pseudo_packet_t packet;
     memcpy(packet.src_ip, session->src_ip, IP_ADDR_LEN);

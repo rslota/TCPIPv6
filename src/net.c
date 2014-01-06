@@ -38,10 +38,16 @@ session_t *net_init(const char *interface, const uint8_t src_ip[],
         case UDP:
             s->protocol = IP_PROTOCOL_UDP;
             break;
+        case ICMP:
+            s->protocol = IP_PROTOCOL_ICMP;
+            break;
         default:
             net_free(s);
             return 0;
     }
+
+    // Save interface name for further use
+    strcpy(s->interface, interface);
 
     return s;
 }
