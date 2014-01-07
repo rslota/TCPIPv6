@@ -36,8 +36,8 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr
     {   
         static uint8_t multicast_addr[] = { 0x33, 0x33, 0x0, 0x0, 0x0, 0x0 };
 
-        uint8_t flags = (ip_addr[1] & 0xf0) >> 4;
-        uint8_t scope = (ip_addr[1] & 0x0f);
+        //uint8_t flags = (ip_addr[1] & 0xf0) >> 4;
+        //uint8_t scope = (ip_addr[1] & 0x0f);
 
         memcpy(multicast_addr + 2, ip_addr + IP_ADDR_LEN - 4, 4); // Multicast mapping: http://tools.ietf.org/html/rfc2464#page-4
         memcpy(hw_addr, multicast_addr, ETH_ADDR_LEN);
