@@ -1,6 +1,7 @@
 #include "ip.h"
 #include "icmp.h"
 #include "net.h"
+#include "ndp_daemon.h"
 
 #include "eth.h"
 #include "hw.h"
@@ -37,7 +38,6 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr
 
         uint8_t flags = (ip_addr[1] & 0xf0) >> 4;
         uint8_t scope = (ip_addr[1] & 0x0f);
-        printf("Multicast addr transate. Flags: %d, Scope: %d\n", flags, scope);
 
         memcpy(multicast_addr + 2, ip_addr + IP_ADDR_LEN - 4, 4); // Multicast mapping: http://tools.ietf.org/html/rfc2464#page-4
         memcpy(hw_addr, multicast_addr, ETH_ADDR_LEN);
@@ -45,7 +45,11 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr
         return 0;
     }
 
-    session_t *icmp_session = net_init(session->interface, session->src_ip, 0, ICMP);
+    if(ndp_table_lookup(ip_addr, hw_addr))
+        return 0;
+
+    session_t *icmp_session = net_init(session->interface, 0, ICMP);
+
     ndp_neighbor_discover_t ndp;
     size_t recv;
     ndp_solicitate_send(icmp_session, ip_addr);
@@ -55,8 +59,6 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr
         if( netb_l( ndp.reserved ) & 1 << 30)
             break;
     }
-
-    printf("Jest git !\n");
 
     if(!recv)
         return 0;
@@ -73,9 +75,11 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr
 
     memcpy(hw_addr, option.body, ETH_ADDR_LEN);
 
-    printf("DEBUG: NDP returned hw_addr: %02x:%02x:%02x:%02x:%02x:%02x for ip_addr: %04x::%04x::%04x::%04x::%04x::%04x::%04x::%04x\n", 
-        hw_addr[0], hw_addr[1], hw_addr[2], hw_addr[3], hw_addr[4], hw_addr[5], 
-        ((uint16_t*)ip_addr)[0], ((uint16_t*)ip_addr)[1], ((uint16_t*)ip_addr)[2], ((uint16_t*)ip_addr)[3], ((uint16_t*)ip_addr)[4], ((uint16_t*)ip_addr)[5], ((uint16_t*)ip_addr)[6], ((uint16_t*)ip_addr)[7]);
+    ndp_table_insert(ip_addr, hw_addr);
+
+    //printf("DEBUG: NDP returned hw_addr: %02x:%02x:%02x:%02x:%02x:%02x for ip_addr: %04x::%04x::%04x::%04x::%04x::%04x::%04x::%04x\n", 
+    //    hw_addr[0], hw_addr[1], hw_addr[2], hw_addr[3], hw_addr[4], hw_addr[5], 
+    //    ((uint16_t*)ip_addr)[0], ((uint16_t*)ip_addr)[1], ((uint16_t*)ip_addr)[2], ((uint16_t*)ip_addr)[3], ((uint16_t*)ip_addr)[4], ((uint16_t*)ip_addr)[5], ((uint16_t*)ip_addr)[6], ((uint16_t*)ip_addr)[7]);
 
     return 0;
 }
@@ -110,19 +114,19 @@ size_t ip_send(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
     return sent == packet_len ? data_len : 0;
 }
 
-/**
- * @todo discard packets which are not directed to our IP address (to be done
- * after NDP implementation, as for now it's convenient for test purposes)
- */
 size_t ip_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
 {
     ip_packet_t packet;
+    static uint8_t icmp_multicast_addr[IP_ADDR_LEN] = { 0xff, 0x02, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0xff, 0x0, 0x0, 0x0 };
+    memcpy(icmp_multicast_addr + 13, session->src_ip + 13, 3);
 
     size_t received; 
-    // Skip all packets that don't match the session's protocol
+    // Skip all packets that don't match the session's protocol or ip_addr
     while( (received = eth_recv(session, packet.buffer)) > 0 )
     {
-        if(packet.next_header == session->protocol)
+        if(packet.next_header == session->protocol && 
+            (memcmp(packet.dst_ip, session->src_ip, IP_ADDR_LEN) == 0 || 
+             memcmp(packet.dst_ip, icmp_multicast_addr, IP_ADDR_LEN) == 0 ) ) // ICMP multicast addr
             break;
     }
 
@@ -131,6 +135,8 @@ size_t ip_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
 
     const size_t data_len = MIN(received - IP_HEADER_LEN, buffer_len);
     memcpy(buffer, packet.data, data_len);
+
+    memcpy(session->last_sender_ip, packet.src_ip, IP_ADDR_LEN);
 
     return data_len;
 }

@@ -13,7 +13,6 @@ size_t icmp_send(session_t *session, const uint8_t dst_ip[], uint8_t type, uint8
 
     message.checksum = ip_chksum(session, dst_ip, IP_PROTOCOL_ICMP, message.buffer, offsetof(icmp_packet_t, body) + message_len);
 
-    printf("ICMP send... message_len: %d\n", message_len);
     return ip_send(session, dst_ip, IP_PROTOCOL_ICMP, (uint8_t*)&message, offsetof(icmp_packet_t, body) + message_len);
 }
 
@@ -40,9 +39,6 @@ size_t ndp_solicitate_send(session_t *session, const uint8_t ip_addr[])
 {
     uint8_t icmp_dest_addr[IP_ADDR_LEN] = { 0xff, 0x02, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0xff, 0x0, 0x0, 0x0 };
     memcpy(icmp_dest_addr + 13, ip_addr + 13, 3);
-    uint8_t link_addr_prefix[AARCH_ADDR_LEN] = { 0xfe, 0x80, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-    uint8_t aarch_addr[AARCH_ADDR_LEN];
-    eui48_to_aarch(session->src_addr, aarch_addr);
 
     ndp_option_t option1;
     option1.type = NDP_SOURCE_LINK_ADDR_OPT;
@@ -54,10 +50,7 @@ size_t ndp_solicitate_send(session_t *session, const uint8_t ip_addr[])
     memcpy(ndp_query.options, option1.buffer, offsetof(ndp_option_t, body) + ETH_ADDR_LEN);
     
 
-
-    printf("NDP query...\n");
     size_t ret = icmp_send(session, icmp_dest_addr, ICMP_TYPE_NEIGHBOR_SOLICITATION, 0, ndp_query.buffer, (size_t)offsetof(ndp_neighbor_discover_t, options) + offsetof(ndp_option_t, body) + ETH_ADDR_LEN);
-    printf("NDP query end...\n");
 
     return ret;
 }
@@ -69,7 +62,6 @@ size_t ndp_advertisement_recv(session_t *session, ndp_neighbor_discover_t *ndp)
 
     while( (recv = icmp_recv(session, &icmp)) > 0 )
     {
-        printf("torolol\n");
         if(icmp.type == ICMP_TYPE_NEIGHBOR_ADVERTISEMENT)
         {
             memcpy(ndp->buffer, icmp.body, recv);

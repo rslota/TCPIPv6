@@ -3,12 +3,12 @@
 #include "hw.h"
 #include "ip.h"
 #include "udp.h"
+#include "ndp_daemon.h"
 
 #include <memory.h>
 #include <stdlib.h>
 
-session_t *net_init(const char *interface, const uint8_t src_ip[],
-                    uint16_t port, protocol_t protocol)
+session_t *net_init(const char *interface, uint16_t port, protocol_t protocol)
 {
     session_t *s = malloc(sizeof(session_t));
     if(s == 0)
@@ -27,7 +27,13 @@ session_t *net_init(const char *interface, const uint8_t src_ip[],
         return 0;
     }
 
-    memcpy(s->src_ip, src_ip, IP_ADDR_LEN);
+    uint8_t src_ip[IP_ADDR_LEN];
+    if(ip_if_addr(s->session_id, interface, s->src_ip) == -1)
+    {
+        net_free(s);
+        return 0;
+    }
+
     s->port = port;
 
     switch(protocol)
@@ -48,6 +54,8 @@ session_t *net_init(const char *interface, const uint8_t src_ip[],
 
     // Save interface name for further use
     strcpy(s->interface, interface);
+
+    ndp_initialize(interface);
 
     return s;
 }

@@ -1,6 +1,7 @@
 #include "ip.h"
 #include "net.h"
 #include "hw.h"
+#include "ndp_daemon.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -8,17 +9,25 @@
 #include <stdio.h>
 #include <stddef.h>
 
-int main(void) {
+int main(int argc, const char *argv[]) {
+    if(argc < 2)
+    {
+        fprintf(stderr, "Usage: %s <interface_name>\n", argv[0]);
+        return 1;
+    }
+
     char ifname[1024] = "eth0";
-    uint8_t dst_ip[] = { 0xfe, 0x80, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xba, 0xe8, 0x56, 0xff, 0xfe, 0x3e, 0x95, 0xc4 }; // fe80::bae8:56ff:fe3e:95c4
-    uint8_t src_ip[] = { 0xfe, 0x80, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x02, 0x1c, 0x42, 0xff, 0xfe, 0x56, 0x2b, 0x2a }; // fe80::21c:42ff:fe56:2b2a
+    strcpy(ifname, argv[1]);
+
+    //uint8_t dst_ip[] = { 0xfe, 0x80, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xba, 0xe8, 0x56, 0xff, 0xfe, 0x3e, 0x95, 0xc4 }; // fe80::bae8:56ff:fe3e:95c4
+    //uint8_t src_ip[] = { 0xfe, 0x80, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x02, 0x1c, 0x42, 0xff, 0xfe, 0x56, 0x2b, 0x2a }; // fe80::21c:42ff:fe56:2b2a
 
     printf("Options:\n");
     // printf("\tbind  <ifname>\t- bind to the interface ifname\n");
     // printf("\tsrcip <ipv6>  \t- set the source ip (format: aa::aa::aa::...)\n");
     // printf("\tdstip <ipv6>  \t- set the destination ip (format: aa::aa::..)\n");
-    printf("\tudp   <text>  \t- send a packet containing text\n");
-    printf("\trecv          \t- wait for a packet and print out its data\n");
+    printf("\tudp  <ip_addr> <port> <text>  \t- send a packet containing text\n");
+    printf("\trecv <port>         \t- wait for a packet and print out its data\n");
 
     while(true)
     {
@@ -55,7 +64,7 @@ int main(void) {
                 continue;
             }
 
-            session_t *session = net_init(ifname, src_ip, port, UDP);
+            session_t *session = net_init(ifname, port, UDP);
             net_send(session, ip_addr, port, (uint8_t*) buffer, strlen(buffer));
             net_free(session);
         }
@@ -65,12 +74,16 @@ int main(void) {
                 continue;
             }
 
-            session_t *session = net_init(ifname, src_ip, port, UDP);
+            session_t *session = net_init(ifname, port, UDP);
             size_t recv = net_recv(session, (uint8_t*) buffer, sizeof(buffer));
             net_free(session);
 
             buffer[recv] = 0;
             printf("Received data: '%s'\n", buffer);
+        } 
+        else if(strcmp(buffer, "ndp") == 0) 
+        {
+            ndp_table_print();
         }
 
         // Flush stdin

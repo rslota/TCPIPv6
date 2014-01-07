@@ -23,6 +23,8 @@ typedef struct session
     uint8_t protocol;
     uint16_t port;
     char interface[INTERFACE_NAME_MAX_LEN];
+
+    uint8_t last_sender_ip[IP_ADDR_LEN]; /// @todo: find better way of knowing this ip_addr
 } session_t;
 
 

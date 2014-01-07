@@ -7,6 +7,11 @@
 #include <sys/socket.h>
 #include <net/route.h>
 #include <net/if.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <ifaddrs.h>
+
 /* Definitions for use with Linux AF_PACKET sockets.
  Copyright (C) 1998-2013 Free Software Foundation, Inc.
  This file is part of the GNU C Library.
@@ -132,6 +137,42 @@ int hw_if_addr(int session_id, const char interface[], uint8_t addr[])
     return 0;
 }
 
+int ip_if_addr(int session_id, const char interface[], uint8_t addr[])
+{
+    struct ifaddrs *ifa = NULL,*ifEntry = NULL;
+    void *addPtr = NULL;
+    int rc = 0;
+    char addressBuffer[INET6_ADDRSTRLEN];
+
+    rc = getifaddrs(&ifa);
+    if(rc != 0) {
+        return -1;
+    }
+    for(ifEntry=ifa; ifEntry != NULL; ifEntry = ifEntry->ifa_next) {
+        if(ifEntry->ifa_addr->sa_data == NULL) {
+                continue;
+        }
+
+        if(strcmp(ifEntry->ifa_name, interface) != 0) {
+            continue;
+        }
+
+        if(ifEntry->ifa_addr->sa_family==AF_INET6) {
+                 addPtr = &((struct sockaddr_in6 *)ifEntry->ifa_addr)->sin6_addr;
+        }
+    }
+
+    freeifaddrs(ifa);
+
+    if(!addPtr)
+        return -1;
+
+    memcpy(addr, addPtr, IP_ADDR_LEN);
+
+    return 0;
+}
+
+
 int hw_free(int session_id)
 {
 	return close(session_id);
@@ -157,7 +198,27 @@ int32_t netb_l(int32_t value)
 	return htonl(value);
 }
 
+int16_t hostb_s(int16_t value)
+{
+    return ntohs(value);
+}
+
 int8_t inet_from_str(const char str[], uint8_t addr[])
 {
     return inet_pton(AF_INET6, str, addr);
+}
+
+/* Threading */
+
+struct thread {
+    pthread_t thread;
+};
+
+thread_t* thread_spawn(void*(*func)(void *data), void *data)
+{
+    thread_t* t = malloc(sizeof(struct thread));
+
+    pthread_create( &t->thread, NULL, func, data);
+
+    return t;
 }
