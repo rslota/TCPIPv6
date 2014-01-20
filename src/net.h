@@ -18,7 +18,8 @@ typedef enum protocol
  * Opens the session.
  * @returns pointer to the created session on success, 0 on error.
  */
-session_t *net_init(const char *interface, uint16_t port, protocol_t protocol);
+session_t *net_init(const char *interface, const uint8_t ip_addr[],
+                    uint16_t port, protocol_t protocol);
 
 /**
  * Closes the session.

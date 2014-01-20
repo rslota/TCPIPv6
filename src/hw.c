@@ -15,17 +15,17 @@
 /* Definitions for use with Linux AF_PACKET sockets.
  Copyright (C) 1998-2013 Free Software Foundation, Inc.
  This file is part of the GNU C Library.
- 
+
  The GNU C Library is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
  License as published by the Free Software Foundation; either
  version 2.1 of the License, or (at your option) any later version.
- 
+
  The GNU C Library is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  Lesser General Public License for more details.
- 
+
  You should have received a copy of the GNU Lesser General Public
  License along with the GNU C Library; if not, see
  <http://www.gnu.org/licenses/>.  */
@@ -137,42 +137,6 @@ int hw_if_addr(int session_id, const char interface[], uint8_t addr[])
     return 0;
 }
 
-int ip_if_addr(int session_id, const char interface[], uint8_t addr[])
-{
-    struct ifaddrs *ifa = NULL,*ifEntry = NULL;
-    void *addPtr = NULL;
-    int rc = 0;
-    char addressBuffer[INET6_ADDRSTRLEN];
-
-    rc = getifaddrs(&ifa);
-    if(rc != 0) {
-        return -1;
-    }
-    for(ifEntry=ifa; ifEntry != NULL; ifEntry = ifEntry->ifa_next) {
-        if(ifEntry->ifa_addr->sa_data == NULL) {
-                continue;
-        }
-
-        if(strcmp(ifEntry->ifa_name, interface) != 0) {
-            continue;
-        }
-
-        if(ifEntry->ifa_addr->sa_family==AF_INET6) {
-                 addPtr = &((struct sockaddr_in6 *)ifEntry->ifa_addr)->sin6_addr;
-        }
-    }
-
-    freeifaddrs(ifa);
-
-    if(!addPtr)
-        return -1;
-
-    memcpy(addr, addPtr, IP_ADDR_LEN);
-
-    return 0;
-}
-
-
 int hw_free(int session_id)
 {
 	return close(session_id);
@@ -201,11 +165,6 @@ int32_t netb_l(int32_t value)
 int16_t hostb_s(int16_t value)
 {
     return ntohs(value);
-}
-
-int8_t inet_from_str(const char str[], uint8_t addr[])
-{
-    return inet_pton(AF_INET6, str, addr);
 }
 
 /* Threading */

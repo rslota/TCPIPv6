@@ -33,7 +33,7 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr
 {
     // Multicast addr case:
     if(ip_addr[0] == 0xff)
-    {   
+    {
         static uint8_t multicast_addr[] = { 0x33, 0x33, 0x0, 0x0, 0x0, 0x0 };
 
         //uint8_t flags = (ip_addr[1] & 0xf0) >> 4;
@@ -45,15 +45,23 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr
         return 0;
     }
 
+    // Localhost hardwire:
+    if(memcmp(ip_addr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\1", IP_ADDR_LEN) == 0 ||
+       memcmp(ip_addr, session->src_ip, IP_ADDR_LEN) == 0)
+    {
+        memcpy(hw_addr, session->src_addr, ETH_ADDR_LEN);
+        return 0;
+    }
+
     if(ndp_table_lookup(ip_addr, hw_addr))
         return 0;
 
-    session_t *icmp_session = net_init(session->interface, 0, ICMP);
+    session_t *icmp_session = net_init(session->interface, session->src_ip, 0, ICMP);
 
     ndp_neighbor_discover_t ndp;
     size_t recv;
     ndp_solicitate_send(icmp_session, ip_addr);
-    
+
     while( (recv = ndp_advertisement_recv(icmp_session, &ndp) ) > 0)
     {
         if( netb_l( ndp.reserved ) & 1 << 30)
@@ -65,20 +73,20 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr
 
     ndp_option_t option;
     memcpy(option.buffer, ndp.options, recv - offsetof(ndp_neighbor_discover_t, options));
-    if(option.type != NDP_TARGET_LINK_ADDR_OPT || option.len != 1) 
+    if(option.type != NDP_TARGET_LINK_ADDR_OPT || option.len != 1)
     {
         fprintf(stderr, "Error: unsupported option type for NDP protocol: %d with len: %d\n", option.type, option.len);
         return 0;
-    } 
-    
+    }
+
     net_free(icmp_session);
 
     memcpy(hw_addr, option.body, ETH_ADDR_LEN);
 
     ndp_table_insert(ip_addr, hw_addr);
 
-    //printf("DEBUG: NDP returned hw_addr: %02x:%02x:%02x:%02x:%02x:%02x for ip_addr: %04x::%04x::%04x::%04x::%04x::%04x::%04x::%04x\n", 
-    //    hw_addr[0], hw_addr[1], hw_addr[2], hw_addr[3], hw_addr[4], hw_addr[5], 
+    //printf("DEBUG: NDP returned hw_addr: %02x:%02x:%02x:%02x:%02x:%02x for ip_addr: %04x::%04x::%04x::%04x::%04x::%04x::%04x::%04x\n",
+    //    hw_addr[0], hw_addr[1], hw_addr[2], hw_addr[3], hw_addr[4], hw_addr[5],
     //    ((uint16_t*)ip_addr)[0], ((uint16_t*)ip_addr)[1], ((uint16_t*)ip_addr)[2], ((uint16_t*)ip_addr)[3], ((uint16_t*)ip_addr)[4], ((uint16_t*)ip_addr)[5], ((uint16_t*)ip_addr)[6], ((uint16_t*)ip_addr)[7]);
 
     return 0;
@@ -120,12 +128,12 @@ size_t ip_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
     static uint8_t icmp_multicast_addr[IP_ADDR_LEN] = { 0xff, 0x02, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0xff, 0x0, 0x0, 0x0 };
     memcpy(icmp_multicast_addr + 13, session->src_ip + 13, 3);
 
-    size_t received; 
+    size_t received;
     // Skip all packets that don't match the session's protocol or ip_addr
     while( (received = eth_recv(session, packet.buffer)) > 0 )
     {
-        if(packet.next_header == session->protocol && 
-            (memcmp(packet.dst_ip, session->src_ip, IP_ADDR_LEN) == 0 || 
+        if(packet.next_header == session->protocol &&
+            (memcmp(packet.dst_ip, session->src_ip, IP_ADDR_LEN) == 0 ||
              memcmp(packet.dst_ip, icmp_multicast_addr, IP_ADDR_LEN) == 0 ) ) // ICMP multicast addr
             break;
     }

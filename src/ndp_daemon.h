@@ -5,7 +5,7 @@
 
 extern volatile uint8_t is_initialized;
 
-void ndp_initialize(const char *ifname);
+void ndp_initialize(const char *ifname, const uint8_t src_ip_addr[]);
 void ndp_stop();
 
 void ndp_table_insert(const uint8_t ip_addr[], const uint8_t hw_addr[]);
