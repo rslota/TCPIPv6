@@ -46,6 +46,11 @@ int16_t netb_s(int16_t value);
 int16_t hostb_s(int16_t value);
 
 /**
+ * Convert value from network to byte byte order.
+ */
+int32_t hostb_l(int32_t value);
+
+/**
  * Convert value from host to network byte order.
  */
 int32_t netb_l(int32_t value);

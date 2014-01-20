@@ -203,6 +203,11 @@ int16_t hostb_s(int16_t value)
     return ntohs(value);
 }
 
+int32_t hostb_l(int32_t value)
+{
+    return ntohl(value);
+}
+
 int8_t inet_from_str(const char str[], uint8_t addr[])
 {
     return inet_pton(AF_INET6, str, addr);

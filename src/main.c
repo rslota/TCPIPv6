@@ -1,5 +1,6 @@
 #include "ip.h"
 #include "net.h"
+#include "tcp.h"
 #include "hw.h"
 #include "ndp_daemon.h"
 
@@ -66,6 +67,24 @@ int main(int argc, const char *argv[]) {
 
             session_t *session = net_init(ifname, port, UDP);
             net_send(session, ip_addr, port, (uint8_t*) buffer, strlen(buffer));
+            net_free(session);
+        } 
+        else if(strcmp(buffer, "tcp") == 0)
+        {
+            // Get line
+            if( scanf("%s %d %s", addr, &port, buffer) != 3 ) {
+                continue;
+            }
+            
+            if(!inet_from_str(addr, ip_addr)) {
+                fprintf(stderr, "Error: Invalid IPv6 addr !");
+                continue;
+            }
+
+            session_t *session = net_init(ifname, port, TCP);
+            
+            tcp_connect(session, ip_addr, port);
+            
             net_free(session);
         }
         else if(strcmp(buffer, "recv") == 0)
