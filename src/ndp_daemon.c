@@ -39,12 +39,12 @@ void* recv_loop(void *data)
         {
             case ICMP_TYPE_NEIGHBOR_SOLICITATION:
                 memcpy(n_discvr.buffer, packet.body, recv);
-                fprintf(stdout, "Debug: Handling ICMP_TYPE_NEIGHBOR_SOLICITATION with target addr: %04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx\n",
-                    ((uint16_t*)n_discvr.target_addr)[0], ((uint16_t*)n_discvr.target_addr)[1], ((uint16_t*)n_discvr.target_addr)[2], ((uint16_t*)n_discvr.target_addr)[3], ((uint16_t*)n_discvr.target_addr)[4], ((uint16_t*)n_discvr.target_addr)[5], ((uint16_t*)n_discvr.target_addr)[6], ((uint16_t*)n_discvr.target_addr)[7]);
+                //fprintf(stdout, "Debug: Handling ICMP_TYPE_NEIGHBOR_SOLICITATION with target addr: %04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx\n",
+                //    ((uint16_t*)n_discvr.target_addr)[0], ((uint16_t*)n_discvr.target_addr)[1], ((uint16_t*)n_discvr.target_addr)[2], ((uint16_t*)n_discvr.target_addr)[3], ((uint16_t*)n_discvr.target_addr)[4], ((uint16_t*)n_discvr.target_addr)[5], ((uint16_t*)n_discvr.target_addr)[6], ((uint16_t*)n_discvr.target_addr)[7]);
                 
                 if(memcmp(n_discvr.target_addr, session->src_ip, IP_ADDR_LEN) != 0) 
                 {
-                    fprintf(stdout, "Debug: Skipping ICMP_TYPE_NEIGHBOR_SOLICITATION, invalid target_addr.");
+                    //fprintf(stdout, "Debug: Skipping ICMP_TYPE_NEIGHBOR_SOLICITATION, invalid target_addr.");
                     continue;
                 }
 
@@ -81,8 +81,8 @@ void* recv_loop(void *data)
 
                 break;
             case ICMP_TYPE_NEIGHBOR_ADVERTISEMENT:
-                fprintf(stdout, "Debug: Handling ICMP_TYPE_NEIGHBOR_ADVERTISEMENT with target addr: %04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx\n",
-                    ((uint16_t*)n_discvr.target_addr)[0], ((uint16_t*)n_discvr.target_addr)[1], ((uint16_t*)n_discvr.target_addr)[2], ((uint16_t*)n_discvr.target_addr)[3], ((uint16_t*)n_discvr.target_addr)[4], ((uint16_t*)n_discvr.target_addr)[5], ((uint16_t*)n_discvr.target_addr)[6], ((uint16_t*)n_discvr.target_addr)[7]);
+                //fprintf(stdout, "Debug: Handling ICMP_TYPE_NEIGHBOR_ADVERTISEMENT with target addr: %04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx\n",
+                //    ((uint16_t*)n_discvr.target_addr)[0], ((uint16_t*)n_discvr.target_addr)[1], ((uint16_t*)n_discvr.target_addr)[2], ((uint16_t*)n_discvr.target_addr)[3], ((uint16_t*)n_discvr.target_addr)[4], ((uint16_t*)n_discvr.target_addr)[5], ((uint16_t*)n_discvr.target_addr)[6], ((uint16_t*)n_discvr.target_addr)[7]);
                 
                 memcpy(n_discvr.buffer, packet.body, recv);
 
@@ -111,7 +111,8 @@ void* recv_loop(void *data)
 
                 break;
             default:
-                fprintf(stdout, "Debug: Skipping unsupported ICMP packet with type: %d.\n", packet.type);
+                //fprintf(stdout, "Debug: Skipping unsupported ICMP packet with type: %d.\n", packet.type);
+            ;
         }
     }
 

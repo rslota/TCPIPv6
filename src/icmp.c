@@ -18,7 +18,7 @@ size_t icmp_send(session_t *session, const uint8_t dst_ip[], uint8_t type, uint8
 
 size_t icmp_recv(session_t *session, icmp_packet_t *packet)
 {
-    // TODO: validate checksum
+    /// @todo: validate checksum
     size_t recv = ip_recv(session, packet->buffer, sizeof(icmp_packet_t));
     if(recv > offsetof(icmp_packet_t, body)) {
         return recv - offsetof(icmp_packet_t, body);

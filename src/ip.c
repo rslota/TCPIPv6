@@ -61,14 +61,14 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr
     }
 
     if(!recv)
-        return 0;
+        return -1;
 
     ndp_option_t option;
     memcpy(option.buffer, ndp.options, recv - offsetof(ndp_neighbor_discover_t, options));
     if(option.type != NDP_TARGET_LINK_ADDR_OPT || option.len != 1) 
     {
         fprintf(stderr, "Error: unsupported option type for NDP protocol: %d with len: %d\n", option.type, option.len);
-        return 0;
+        return -1;
     } 
     
     net_free(icmp_session);
@@ -125,8 +125,7 @@ size_t ip_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
     while( (received = eth_recv(session, packet.buffer)) > 0 )
     {
         if(packet.next_header == session->protocol && 
-            (memcmp(packet.dst_ip, session->src_ip, IP_ADDR_LEN) == 0 || 
-             memcmp(packet.dst_ip, icmp_multicast_addr, IP_ADDR_LEN) == 0 ) ) // ICMP multicast addr
+            1 ) // ICMP multicast addr
             break;
     }
 

@@ -1,4 +1,5 @@
 add_executable( test
+    tcp.c
     ndp_daemon.c
     icmp.c
     hw.c
