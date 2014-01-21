@@ -35,7 +35,8 @@ size_t tcp_close(session_t *session);
 
 /**
  * Waits for a connection from a remote host.
- * @param session The session object created by net_init().
+ * @param session The session object created by net_init() with protocol
+ * TCP_NOCONNECT.
  * @param bind_ip The IP the server will be bound to.
  * @param bind_port The TCP port the server will be bound to.
  * @returns The new session associated with the connection.

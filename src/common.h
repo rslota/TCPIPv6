@@ -39,10 +39,10 @@ typedef struct session
     uint8_t src_ip[IP_ADDR_LEN];
     uint8_t protocol;
     uint16_t port;
+    int recv_timeout;
     char *interface;
     tcp_session_t tcp;
 
-    /// @todo There might be a better way to store this address.
     uint8_t last_sender_ip[IP_ADDR_LEN];
 } session_t;
 

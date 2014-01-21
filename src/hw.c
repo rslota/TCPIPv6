@@ -3,14 +3,15 @@
 #include "common.h"
 
 #include <arpa/inet.h>
+#include <ifaddrs.h>
 #include <net/if.h>
-#include <sys/socket.h>
+#include <net/if.h>
 #include <net/route.h>
-#include <net/if.h>
+#include <poll.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <sys/socket.h>
 #include <sys/types.h>
-#include <ifaddrs.h>
 
 /* Definitions for use with Linux AF_PACKET sockets.
  Copyright (C) 1998-2013 Free Software Foundation, Inc.
@@ -147,9 +148,12 @@ size_t hw_send(int session_id, uint8_t data[], size_t data_len)
 	return send(session_id, data, data_len, 0);
 }
 
-size_t hw_recv(int session_id, uint8_t buffer[], size_t buffer_len)
+size_t hw_recv(int session_id, int timeout, uint8_t buffer[], size_t buffer_len)
 {
-	return recv(session_id, buffer, buffer_len, 0);
+    struct pollfd fd[1];
+    fd[0].fd = session_id;
+    fd[0].events = POLLRDNORM;
+    return poll(fd, 1, timeout) ? recv(session_id, buffer, buffer_len, 0) : 0;
 }
 
 uint16_t netb_s(uint16_t value)

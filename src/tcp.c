@@ -159,7 +159,7 @@ session_t *tcp_listen(session_t *session, const uint8_t bind_ip[], uint16_t bind
         return 0;
     }
 
-    session_t *nsess = net_init(session->interface, session->src_ip, bind_port, 0, 0, session->protocol);
+    session_t *nsess = net_init(session->interface, session->src_ip, bind_port, 0, 0, session->protocol, 1000);
     nsess->tcp.state = TCP_STATE_ESTABLISHED;
     nsess->tcp.ack = hostb_l(rcv.seq_num) + 1;
     nsess->tcp.seq = hostb_l(hdr.seq_num);

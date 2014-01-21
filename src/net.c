@@ -11,7 +11,7 @@
 
 session_t *net_init(const char *interface, const uint8_t src_ip_addr[],
                     uint16_t src_port, const uint8_t dst_ip_addr[],
-                    uint16_t dst_port, protocol_t protocol)
+                    uint16_t dst_port, protocol_t protocol, int recv_timeout)
 {
     session_t *s = malloc(sizeof(session_t));
     if(s == 0)
@@ -32,6 +32,7 @@ session_t *net_init(const char *interface, const uint8_t src_ip_addr[],
 
     memcpy(s->src_ip, src_ip_addr, IP_ADDR_LEN);
     s->port = src_port;
+    s->recv_timeout = recv_timeout;
 
     switch(protocol)
     {

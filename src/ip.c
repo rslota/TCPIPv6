@@ -57,7 +57,7 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[],
         return 0;
 
     session_t *icmp_session = net_init(session->interface, session->src_ip, 0,
-                                       0, 0, ICMP);
+                                       0, 0, ICMP, 1000);
 
     ndp_neighbor_discover_t ndp;
     size_t recv;

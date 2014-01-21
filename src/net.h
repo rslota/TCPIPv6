@@ -32,11 +32,13 @@ typedef enum protocol
  * @param dst_port The port number of the remote host; used only for the TCP
  * protocol.
  * @param protocol The protocol to use in the session.
+ * @param recv_timeout The timeout on receive operation in milliseconds; -1
+ * means infinity.
  * @returns A pointer to the created session on success, 0 on error.
  */
 session_t *net_init(const char *interface, const uint8_t src_ip_addr[],
                     uint16_t src_port, const uint8_t dst_ip_addr[],
-                    uint16_t dst_port, protocol_t protocol);
+                    uint16_t dst_port, protocol_t protocol, int recv_timeout);
 
 /**
  * Frees a session.

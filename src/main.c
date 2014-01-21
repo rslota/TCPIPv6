@@ -52,7 +52,7 @@ int main(int argc, const char *argv[]) {
                 continue;
             }
 
-            session_t *session = net_init(ifname, src_ip_addr, port, 0, 0, UDP);
+            session_t *session = net_init(ifname, src_ip_addr, port, 0, 0, UDP, -1);
             net_send(session, dst_ip_addr, port, (uint8_t*) buffer, strlen(buffer));
             net_free(session);
         }
@@ -62,7 +62,7 @@ int main(int argc, const char *argv[]) {
                 continue;
             }
 
-            session_t *session = net_init(ifname, src_ip_addr, port, 0, 0, TCP_NOCONNECT);
+            session_t *session = net_init(ifname, src_ip_addr, port, 0, 0, TCP_NOCONNECT, -1);
 
             tcp_listen(session, src_ip_addr, port);
 
@@ -81,7 +81,7 @@ int main(int argc, const char *argv[]) {
                 continue;
             }
 
-            session_t *session = net_init(ifname, src_ip_addr, port, dst_ip_addr, port, TCP);
+            session_t *session = net_init(ifname, src_ip_addr, port, dst_ip_addr, port, TCP, -1);
             net_free(session);
         }
         else if(strcmp(buffer, "recv") == 0)
@@ -90,7 +90,7 @@ int main(int argc, const char *argv[]) {
                 continue;
             }
 
-            session_t *session = net_init(ifname, src_ip_addr, port, 0, 0, UDP);
+            session_t *session = net_init(ifname, src_ip_addr, port, 0, 0, UDP, -1);
             size_t recv = net_recv(session, (uint8_t*) buffer, sizeof(buffer));
             net_free(session);
 
