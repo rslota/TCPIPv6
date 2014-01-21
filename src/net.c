@@ -8,7 +8,8 @@
 #include <memory.h>
 #include <stdlib.h>
 
-session_t *net_init(const char *interface, uint16_t port, protocol_t protocol)
+session_t *net_init(const char *interface, const uint8_t ip_addr[],
+                    uint16_t port, protocol_t protocol)
 {
     session_t *s = malloc(sizeof(session_t));
     if(s == 0)
@@ -27,13 +28,7 @@ session_t *net_init(const char *interface, uint16_t port, protocol_t protocol)
         return 0;
     }
 
-    uint8_t src_ip[IP_ADDR_LEN];
-    if(ip_if_addr(s->session_id, interface, s->src_ip) == -1)
-    {
-        net_free(s);
-        return 0;
-    }
-
+    memcpy(s->src_ip, ip_addr, IP_ADDR_LEN);
     s->port = port;
 
     switch(protocol)
@@ -53,9 +48,10 @@ session_t *net_init(const char *interface, uint16_t port, protocol_t protocol)
     }
 
     // Save interface name for further use
+    s->interface = malloc(strlen(interface) + 1);
     strcpy(s->interface, interface);
 
-    ndp_initialize(interface);
+    ndp_initialize(interface, ip_addr);
 
     return s;
 }
@@ -63,6 +59,7 @@ session_t *net_init(const char *interface, uint16_t port, protocol_t protocol)
 int net_free(session_t *session)
 {
     const int err = hw_free(session->session_id);
+    free(session->interface);
     free(session);
     return err;
 }

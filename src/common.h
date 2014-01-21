@@ -7,9 +7,7 @@
 
 #define ETH_ADDR_LEN      6
 #define ETH_PROTOCOL_IPV6 0x86DD
-#define IP_ADDR_LEN      16
-
-#define INTERFACE_NAME_MAX_LEN 1024
+#define IP_ADDR_LEN       16
 
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 #define MIN(x, y) ((x) > (y) ? (y) : (x))
@@ -22,12 +20,10 @@ typedef struct session
     uint8_t src_ip[IP_ADDR_LEN];
     uint8_t protocol;
     uint16_t port;
-    uint32_t tcp_ack;
-    uint32_t tcp_seq;
-    uint8_t  tcp_state; 
-    char interface[INTERFACE_NAME_MAX_LEN];
+    char *interface;
 
-    uint8_t last_sender_ip[IP_ADDR_LEN]; /// @todo: find better way of knowing this ip_addr
+    /// @todo There might be a better way to store this address.
+    uint8_t last_sender_ip[IP_ADDR_LEN];
 } session_t;
 
 

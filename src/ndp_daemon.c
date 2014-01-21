@@ -1,14 +1,17 @@
 #include "ndp_daemon.h"
+
 #include "hw.h"
 #include "icmp.h"
 #include "net.h"
 
-#include <time.h>
+#include <memory.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define NDP_TABLE_MAX_SIZE 100000
 
-typedef struct ndp_record {
+typedef struct ndp_record
+{
     uint8_t ip_addr[IP_ADDR_LEN];
     uint8_t hw_addr[ETH_ADDR_LEN];
 
@@ -18,42 +21,41 @@ typedef struct ndp_record {
 volatile uint8_t is_initialized = 0;
 
 static thread_t *receiver_thread, *sender_thread;
+static uint8_t src_ip_addr[IP_ADDR_LEN];
 static char ifname[1024];
 
 // @todo synchronization
 static ndp_record_t*  ndp_table [ NDP_TABLE_MAX_SIZE ];
 
-void* recv_loop(void *data)
+static void *recv_loop(void *data)
 {
-    session_t *session = net_init(ifname, 0, ICMP);
+    session_t *session = net_init(ifname, src_ip_addr, 0, ICMP);
     icmp_packet_t packet;
     ndp_neighbor_discover_t n_discvr;
 
     while(is_initialized)
     {
         size_t recv = icmp_recv(session, &packet);
-        if(!recv) 
+        if(!recv)
             continue;
 
-        switch(packet.type) 
+        switch(packet.type)
         {
             case ICMP_TYPE_NEIGHBOR_SOLICITATION:
                 memcpy(n_discvr.buffer, packet.body, recv);
-                //fprintf(stdout, "Debug: Handling ICMP_TYPE_NEIGHBOR_SOLICITATION with target addr: %04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx\n",
-                //    ((uint16_t*)n_discvr.target_addr)[0], ((uint16_t*)n_discvr.target_addr)[1], ((uint16_t*)n_discvr.target_addr)[2], ((uint16_t*)n_discvr.target_addr)[3], ((uint16_t*)n_discvr.target_addr)[4], ((uint16_t*)n_discvr.target_addr)[5], ((uint16_t*)n_discvr.target_addr)[6], ((uint16_t*)n_discvr.target_addr)[7]);
-                
-                if(memcmp(n_discvr.target_addr, session->src_ip, IP_ADDR_LEN) != 0) 
-                {
-                    //fprintf(stdout, "Debug: Skipping ICMP_TYPE_NEIGHBOR_SOLICITATION, invalid target_addr.");
+
+                if(memcmp(n_discvr.target_addr, session->src_ip,
+                          IP_ADDR_LEN) != 0)
                     continue;
-                }
 
                 ndp_option_t opt;
-                memcpy(opt.buffer, n_discvr.options, recv + offsetof(ndp_neighbor_discover_t, options));
+                memcpy(opt.buffer, n_discvr.options, recv + NDP_ND_HEADER_LEN);
 
-                if(opt.type != NDP_SOURCE_LINK_ADDR_OPT || opt.len != 1) 
+                if(opt.type != NDP_SOURCE_LINK_ADDR_OPT || opt.len != 1)
                 {
-                    fprintf(stdout, "Error: Invalid NDP option type: %d. Expected: %d (NDP_SOURCE_LINK_ADDR_OPT)\n.", opt.type, NDP_SOURCE_LINK_ADDR_OPT);
+                    fprintf(stderr, "Error: Invalid NDP option type: %d. "
+                                    "Expected: %d (NDP_SOURCE_LINK_ADDR_OPT)"
+                                    "\n.", opt.type, NDP_SOURCE_LINK_ADDR_OPT);
                     continue;
                 }
 
@@ -63,56 +65,56 @@ void* recv_loop(void *data)
                 ndp_option_t opt_resp;
 
                 memcpy(ndp_resp.target_addr, n_discvr.target_addr, IP_ADDR_LEN);
-                ndp_resp.reserved = netb_l( 1 << 30 | 1 << 29 ); // sol & override flag
+                // sol & override flag
+                ndp_resp.reserved = netb_l( 1 << 30 | 1 << 29 );
 
                 opt_resp.type = NDP_TARGET_LINK_ADDR_OPT;
                 opt_resp.len = 1;
                 memcpy(opt_resp.body, session->src_addr, ETH_ADDR_LEN);
 
-                size_t opts_len = offsetof(ndp_option_t, body) + ETH_ADDR_LEN;
+                size_t opts_len = NDP_OPT_HEADER_LEN + ETH_ADDR_LEN;
                 memcpy(ndp_resp.options, opt_resp.buffer, opts_len);
 
-                size_t resp = icmp_send(session, session->last_sender_ip, ICMP_TYPE_NEIGHBOR_ADVERTISEMENT, 0, ndp_resp.buffer, offsetof(ndp_neighbor_discover_t, options) + opts_len);
+                size_t resp = icmp_send(session, session->last_sender_ip,
+                                        ICMP_TYPE_NEIGHBOR_ADVERTISEMENT, 0,
+                                        ndp_resp.buffer,
+                                        NDP_ND_HEADER_LEN + opts_len);
+
                 if(resp <= 0)
                 {
-                    fprintf(stdout, "Error: Cannot respond with  ICMP_TYPE_NEIGHBOR_ADVERTISEMENT!\n.");
+                    fprintf(stderr, "Error: Cannot respond with "
+                                    "ICMP_TYPE_NEIGHBOR_ADVERTISEMENT!\n.");
                     continue;
                 }
 
                 break;
+
             case ICMP_TYPE_NEIGHBOR_ADVERTISEMENT:
-                //fprintf(stdout, "Debug: Handling ICMP_TYPE_NEIGHBOR_ADVERTISEMENT with target addr: %04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx\n",
-                //    ((uint16_t*)n_discvr.target_addr)[0], ((uint16_t*)n_discvr.target_addr)[1], ((uint16_t*)n_discvr.target_addr)[2], ((uint16_t*)n_discvr.target_addr)[3], ((uint16_t*)n_discvr.target_addr)[4], ((uint16_t*)n_discvr.target_addr)[5], ((uint16_t*)n_discvr.target_addr)[6], ((uint16_t*)n_discvr.target_addr)[7]);
-                
                 memcpy(n_discvr.buffer, packet.body, recv);
+                uint8_t zeros[IP_ADDR_LEN] = { 0x0 };
 
-                uint8_t zeros[IP_ADDR_LEN] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
                 if(memcmp(zeros, n_discvr.target_addr, IP_ADDR_LEN) == 0)
-                {
-                    // not sure why it's even possible... 
-                    continue;
-                }
+                    continue; // not sure why it's even possible...
 
-                if(recv <= offsetof(ndp_neighbor_discover_t, options)) 
-                {
-                    // If there's no option, ignore 
-                    continue;
-                }
+                if(recv <= offsetof(ndp_neighbor_discover_t, options))
+                    continue; // If there's no option, ignore
 
-                memcpy(opt.buffer, n_discvr.options, recv + offsetof(ndp_neighbor_discover_t, options));
+                memcpy(opt.buffer, n_discvr.options, recv + NDP_ND_HEADER_LEN);
 
-                if(opt.type != NDP_TARGET_LINK_ADDR_OPT || opt.len != 1) 
+                if(opt.type != NDP_TARGET_LINK_ADDR_OPT || opt.len != 1)
                 {
-                    fprintf(stdout, "Error: Invalid NDP option type: %d. Expected: %d (NDP_TARGET_LINK_ADDR_OPT)\n.", opt.type, NDP_TARGET_LINK_ADDR_OPT);
+                    fprintf(stderr, "Error: Invalid NDP option type: %d. "
+                                    "Expected: %d (NDP_TARGET_LINK_ADDR_OPT)"
+                                    "\n.", opt.type, NDP_TARGET_LINK_ADDR_OPT);
                     continue;
                 }
 
                 ndp_table_insert(n_discvr.target_addr, opt.body);
 
                 break;
+
             default:
-                //fprintf(stdout, "Debug: Skipping unsupported ICMP packet with type: %d.\n", packet.type);
-            ;
+                break; // unsupported ICMP type
         }
     }
 
@@ -120,7 +122,7 @@ void* recv_loop(void *data)
     return 0;
 }
 
-void* send_loop(void *data)
+static void* send_loop(void *data)
 {
 
     while(0 && is_initialized)
@@ -163,10 +165,13 @@ void ndp_table_insert(const uint8_t ip_addr[], const uint8_t hw_addr[])
         }
     }
 
-    if(first_free < NDP_TABLE_MAX_SIZE) {
+    if(first_free < NDP_TABLE_MAX_SIZE)
+    {
         ndp_table[first_free] = rec;
-    } else {
-        first_free = time(NULL) % NDP_TABLE_MAX_SIZE; /// @todo: pls fix me !
+    }
+    else
+    {
+        first_free = rand() % NDP_TABLE_MAX_SIZE;
         free(ndp_table[ first_free ]);
         ndp_table[ first_free ] = rec;
     }
@@ -182,7 +187,8 @@ uint8_t ndp_table_lookup(const uint8_t ip_addr[], uint8_t hw_addr[])
             ndp_table[i] = 0;
         }
 
-        if(ndp_table[i] && memcmp(ndp_table[i]->ip_addr, ip_addr, IP_ADDR_LEN) == 0)
+        if(ndp_table[i] &&
+           memcmp(ndp_table[i]->ip_addr, ip_addr, IP_ADDR_LEN) == 0)
         {
             memcpy(hw_addr, ndp_table[i]->hw_addr, ETH_ADDR_LEN);
 
@@ -193,13 +199,21 @@ uint8_t ndp_table_lookup(const uint8_t ip_addr[], uint8_t hw_addr[])
     return 0;
 }
 
-void ndp_initialize(const char *_ifname)
+static void ndp_stop(void)
+{
+    is_initialized = 0;
+    free(receiver_thread);
+    free(sender_thread);
+}
+
+void ndp_initialize(const char *_ifname, const uint8_t _src_ip_addr[])
 {
     if(is_initialized)
         return;
 
     is_initialized = 1;
     strcpy(ifname, _ifname);
+    memcpy(src_ip_addr, _src_ip_addr, IP_ADDR_LEN);
 
     for(int i = 0; i < NDP_TABLE_MAX_SIZE; ++i) {
         ndp_table[i] = 0;
@@ -207,16 +221,11 @@ void ndp_initialize(const char *_ifname)
 
     receiver_thread = thread_spawn(&recv_loop, 0);
     sender_thread = thread_spawn(send_loop, 0);
+
+    atexit(ndp_stop);
 }
 
-void ndp_stop()
-{
-    is_initialized = 0;
-    free(receiver_thread);
-    free(sender_thread);
-}
-
-void ndp_table_print() 
+void ndp_table_print(void)
 {
     printf("***********************\n");
     printf(">>>>>> NDP Table <<<<<<\n");
@@ -233,11 +242,13 @@ void ndp_table_print()
         {
             uint16_t *ip = (uint16_t*)ndp_table[i]->ip_addr;
             uint8_t *hw = ndp_table[i]->hw_addr;
-            printf("\t(Index: %d, Valid: %lds): %04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx::%04hx ----->>>> %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", 
-                i, ndp_table[i]->valid_to - time(NULL),
-                hostb_s(ip[0]), hostb_s(ip[1]), hostb_s(ip[2]), hostb_s(ip[3]), hostb_s(ip[4]), hostb_s(ip[5]), hostb_s(ip[6]), hostb_s(ip[7]),
-                hw[0], hw[1], hw[2], hw[3], hw[4], hw[5]);
+            printf("\t(Index: %d, Valid: %lds): %04hx::%04hx::%04hx::%04hx::"
+                   "%04hx::%04hx::%04hx::%04hx ----->>>> %02hhx:%02hhx:%02hhx:"
+                   "%02hhx:%02hhx:%02hhx\n", i,
+                   ndp_table[i]->valid_to - time(NULL), hostb_s(ip[0]),
+                   hostb_s(ip[1]), hostb_s(ip[2]), hostb_s(ip[3]),
+                   hostb_s(ip[4]), hostb_s(ip[5]), hostb_s(ip[6]),
+                   hostb_s(ip[7]), hw[0], hw[1], hw[2], hw[3], hw[4], hw[5]);
         }
     }
 }
-

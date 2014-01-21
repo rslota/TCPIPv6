@@ -1,5 +1,12 @@
-#ifndef TCPIPStack_external_h
-#define TCPIPStack_external_h
+/**
+ * @file hw.h This file contains functions and definitions connected to the
+ * OSI layer 1 functionality. The functions from this file need to be redefined
+ * in order to port the stack to a different platform. The reference
+ * implementation supplied in hw.c works on Linux 2.6+ kernels.
+ */
+
+#ifndef TCPIPStack_hw_h
+#define TCPIPStack_hw_h
 
 
 #include <stddef.h>
@@ -7,66 +14,82 @@
 
 /**
  * Initialize data needed for hardware-level communication.
- * @returns a session id associated with the session, -1 on error.
+ * @returns A session id associated with the hardware session on success, -1 on
+ * error.
  */
 int hw_init(const char interface[]);
 
 /**
  * Retrieve the hardware address of an interface identified by param interface.
- * @param interface the interface name.
- * @param addr the buffer into which the address will be written.
+ * @param session_id The id number returned by hw_init().
+ * @param interface The name of an interface.
+ * @param addr The buffer into which the address will be written.
  * @returns 0 on success, -1 on error.
  */
 int hw_if_addr(int session_id, const char interface[], uint8_t addr[]);
 
-int ip_if_addr(int session_id, const char interface[], uint8_t addr[]);
-
 /**
- * Frees any resources allocated by hw_session_open().
+ * Frees any resources allocated by hw_init().
+ * @param session_id The id number returned by hw_init().
  * @returns 0 on success, -1 on error.
  */
 int hw_free(int session_id);
 
+/**
+ * Sends the link layer frame through the network.
+ * @param session_id The id number returned by hw_init().
+ * @param data The link layer frame to be sent.
+ * @param data_len The length of data.
+ * @returns The number of bytes of data sent on success, 0 on error.
+ * @note The link layer frame passed to hw_send consists of MAC destination,
+ * MAC source, 802.1Q tag, ethertype and payload fields. The preamble, frame
+ * delimiter, frame check sequence and interframe gap have to be added by
+ * hw_send() implementation.
+ */
 size_t hw_send(int session_id, uint8_t data[], size_t data_len);
 
 /**
- * @note the function should return only when the whole frame was written to
- * the buffer.
+ * Receives data from the network.
+ * @param session_id The id number returned by hw_init().
+ * @param buffer The buffer into which the data contained in the link layer
+ * frame will be written.
+ * @param buffer_len The length of the buffer.
+ * @returns The number of bytes of data written into buffer on success, 0 on
+ * error.
+ * @note This function should block until the whole frame was received.
  */
 size_t hw_recv(int session_id, uint8_t buffer[], size_t buffer_len);
 
 /**
- * Convert value from host to network byte order.
+ * Converts a 2-byte value from host to network byte order.
+ * @param value The value to be converted to network byte order.
+ * @returns The value in network byte order.
  */
-int16_t netb_s(int16_t value);
+uint16_t netb_s(uint16_t value);
 
 /**
- * Convert value from network to byte byte order.
+ * Converts a 2-byte value from network to host byte order.
+ * @param value The value to be converted from network byte order.
+ * @returns The value in host byte order.
  */
-int16_t hostb_s(int16_t value);
+uint16_t hostb_s(uint16_t value);
 
 /**
- * Convert value from network to byte byte order.
+ * Converts a 4-byte value from host to network byte order.
+ * @param value The value to be converted to network byte order.
+ * @returns The value in network byte order.
  */
-int32_t hostb_l(int32_t value);
-
-/**
- * Convert value from host to network byte order.
- */
-int32_t netb_l(int32_t value);
-
-/**
- * Convert string IPv6 addr to binary form.
- * @returns 1 on success, 0 on failure
- */
-int8_t inet_from_str(const char str[], uint8_t addr[]);
+uint32_t netb_l(uint32_t value);
 
 typedef struct thread thread_t;
 
 /**
  * Starts new thread executing given function.
- * @returns thread handle
+ * @param func The function to be executed in a new thread.
+ * @param data The data to be supplied as parameter of the executed function.
+ * @returns A handle of the created thread.
  */
-thread_t* thread_spawn(void* (*func)(void *data), void *data);
+thread_t* thread_spawn(void* (*func)(void*), void *data);
+
 
 #endif
