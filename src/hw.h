@@ -51,14 +51,18 @@ size_t hw_send(int session_id, uint8_t data[], size_t data_len);
 /**
  * Receives data from the network.
  * @param session_id The id number returned by hw_init().
+ * @param timeout The timeout in milliseconds for the receive operation; -1
+ * means infinity.
  * @param buffer The buffer into which the data contained in the link layer
  * frame will be written.
  * @param buffer_len The length of the buffer.
  * @returns The number of bytes of data written into buffer on success, 0 on
  * error.
- * @note This function should block until the whole frame was received.
+ * @note This function should block until the whole frame was received or the
+ * timeout has occurred.
  */
-size_t hw_recv(int session_id, uint8_t buffer[], size_t buffer_len);
+size_t hw_recv(int session_id, int timeout, uint8_t buffer[],
+               size_t buffer_len);
 
 /**
  * Converts a 2-byte value from host to network byte order.

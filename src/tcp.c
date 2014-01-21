@@ -29,14 +29,14 @@ typedef union PACKED tcp_header {
         uint32_t seq_num;
         uint32_t ack_num;
         uint8_t data_offset; // 4-bits - bata offset (x 32-bit words), 3-bit - reserved, 1-bit NS flag
-        uint8_t flags;       // CWR, ECE, URG, ACK, PSH, RST, SYN, FIN  
+        uint8_t flags;       // CWR, ECE, URG, ACK, PSH, RST, SYN, FIN
         uint16_t window_size;
         uint16_t checksum;
         uint16_t urg_pointer; // See URG flag
         uint32_t options[10]; // Maximum of 320 bits, divisible by 32
     };
     uint8_t buffer[TCP_MAX_SEGEMENT_SIZE];
-    
+
 } tcp_header_t;
 
 void* send_worker(void *s) 
@@ -181,9 +181,10 @@ void* recv_worker(void *s)
 size_t tcp_connect(session_t *session, const uint8_t dst_ip[], uint16_t dst_port)
 {
     tcp_header_t hdr, rcv;
- 
+
     static  int client_port = 16000;
     client_port = client_port + (rand() % 32000); /// @todo: random...
+
 
     session->tcp.send_buf_seq = session->tcp.send_buf_end = session->tcp.recv_buf_seq = session->tcp.recv_buf_end = 0;
     session->tcp.dst_port = dst_port;
@@ -215,12 +216,12 @@ size_t tcp_connect(session_t *session, const uint8_t dst_ip[], uint16_t dst_port
         if((rcv.flags & ACK_FLAG) && (rcv.flags & SYN_FLAG) 
             && rcv.ack_num == netb_l(hostb_l(hdr.seq_num) + 1)
             && rcv.dest_port == netb_s(session->tcp.port)
-            && rcv.src_port == netb_s(dst_port)) 
+            && rcv.src_port == netb_s(dst_port))
         {
             break;
         }
     }
-    
+
     if(res <= 0)
     {
         return res;
@@ -261,12 +262,12 @@ session_t *tcp_listen(session_t *session, const uint8_t bind_ip[], uint16_t bind
     // SYN
     while((res = ip_recv(session, rcv.buffer, 20)) > 0)
     {
-        if((rcv.flags & SYN_FLAG) && !(rcv.flags & ACK_FLAG) && rcv.dest_port == netb_s(bind_port)) 
+        if((rcv.flags & SYN_FLAG) && !(rcv.flags & ACK_FLAG) && rcv.dest_port == netb_s(bind_port))
         {
             break;
         }
     }
-        
+
     if(res <= 0)
         return 0;
 
@@ -282,7 +283,7 @@ session_t *tcp_listen(session_t *session, const uint8_t bind_ip[], uint16_t bind
     hdr.checksum = 0;
     hdr.checksum = ip_chksum(session, session->last_sender_ip, IP_PROTOCOL_TCP, hdr.buffer, 20);
 
-    session_t *nsess = net_init(session->interface, session->src_ip, bind_port, TCP);
+    session_t *nsess = net_init(session->interface, session->src_ip, bind_port, 0, 0, TCP_NOCONNECT, -1);
 
     res = ip_send(session, session->last_sender_ip, IP_PROTOCOL_TCP, hdr.buffer, (hdr.data_offset >> 4) * 4);
     if(res <= 0) {
@@ -296,10 +297,10 @@ session_t *tcp_listen(session_t *session, const uint8_t bind_ip[], uint16_t bind
     // ACK
     while((res = ip_recv(session, rcv.buffer, 20)) > 0)
     {
-        if(!(rcv.flags & SYN_FLAG) && (rcv.flags & ACK_FLAG) 
+        if(!(rcv.flags & SYN_FLAG) && (rcv.flags & ACK_FLAG)
             && rcv.dest_port == netb_s(bind_port)
             && rcv.ack_num == netb_l(hostb_l(hdr.seq_num) + 1)
-            && rcv.seq_num == hdr.ack_num) 
+            && rcv.seq_num == hdr.ack_num)
         {
             break;
         }
@@ -307,7 +308,7 @@ session_t *tcp_listen(session_t *session, const uint8_t bind_ip[], uint16_t bind
     if(res <= 0) {
         return 0;
     }
-    
+
     nsess->tcp.state = TCP_STATE_ESTABLISHED;
     nsess->tcp.ack = hostb_l(rcv.seq_num) + 1;
     nsess->tcp.seq = hostb_l(hdr.seq_num) + 1;

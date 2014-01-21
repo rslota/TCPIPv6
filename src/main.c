@@ -54,24 +54,25 @@ int main(int argc, const char *argv[]) {
                 continue;
             }
 
-            session_t *session = net_init(ifname, src_ip_addr, port, UDP);
+            session_t *session = net_init(ifname, src_ip_addr, port, 0, 0, UDP, -1);
             net_send(session, dst_ip_addr, port, (uint8_t*) buffer, strlen(buffer));
+
             net_free(session);
-        } 
+        }
         else if(strcmp(buffer, "listen") == 0)
         {
             if( scanf("%d", &port) != 1 ) {
                 continue;
             }
 
-            session_t *session = net_init(ifname, src_ip_addr, port, TCP);
-            
+            session_t *session = net_init(ifname, src_ip_addr, port, 0, 0, TCP_NOCONNECT, -1);
+
             session_t *sess = tcp_listen(session, src_ip_addr, port);
             size_t recv = tcp_recv(sess, (uint8_t*) buffer, sizeof(buffer));
 
             buffer[recv] = 0;
             printf("Received data: '%s'\n", buffer);
-            
+
             net_free(session);
 
         }
@@ -81,17 +82,15 @@ int main(int argc, const char *argv[]) {
             if( scanf("%s %d %s", dst_addr, &port, buffer) != 3 ) {
                 continue;
             }
-            
+
             if(!inet_pton(AF_INET6, dst_addr, dst_ip_addr)) {
                 fprintf(stderr, "Error: Invalid destination IPv6 addr!\n");
                 continue;
             }
-
-            session_t *session = net_init(ifname, dst_ip_addr, port, TCP);
             
-            tcp_connect(session, dst_ip_addr, port);
+            session_t *session = net_init(ifname, src_ip_addr, port, dst_ip_addr, port, TCP, -1);
             tcp_send(session, (uint8_t*) buffer, strlen(buffer));
-            
+
             continue;
             
             net_free(session);
@@ -102,7 +101,7 @@ int main(int argc, const char *argv[]) {
                 continue;
             }
 
-            session_t *session = net_init(ifname, src_ip_addr, port, UDP);
+            session_t *session = net_init(ifname, src_ip_addr, port, 0, 0, UDP, -1);
             size_t recv = net_recv(session, (uint8_t*) buffer, sizeof(buffer));
             net_free(session);
 

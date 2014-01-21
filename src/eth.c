@@ -47,8 +47,8 @@ size_t eth_recv(session_t *session, uint8_t data[])
 {
     eth_frame_t frame;
 
-    const size_t frame_len = hw_recv(session->session_id, frame.buffer,
-                                     sizeof(frame.buffer));
+    const size_t frame_len = hw_recv(session->session_id, session->recv_timeout,
+                                     frame.buffer, sizeof(frame.buffer));
 
     if(frame_len == (size_t)-1)
         return 0;
