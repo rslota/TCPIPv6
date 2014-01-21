@@ -28,8 +28,10 @@ int main(int argc, const char *argv[]) {
     }
 
     printf("Options:\n");
-    printf("  udp  <ip_addr> <port> <text> - send a packet containing text\n");
-    printf("  recv <port>                  - wait for a packet and print out its data\n");
+    printf("  udp  <ip_addr> <port> <text> - send a UDP packet containing text\n");
+    printf("  recv <port>                  - wait for a UDP packet and print out its data\n");
+    printf("  tcp  <ip_addr> <port> <text> - send a TCP packet containing text\n");
+    printf("  listen <port>                - wait for a TCP packet and print out its data\n");
 
     while(true)
     {
@@ -64,7 +66,11 @@ int main(int argc, const char *argv[]) {
 
             session_t *session = net_init(ifname, src_ip_addr, port, TCP);
             
-            tcp_listen(session, src_ip_addr, port);
+            session_t *sess = tcp_listen(session, src_ip_addr, port);
+            size_t recv = tcp_recv(sess, (uint8_t*) buffer, sizeof(buffer));
+
+            buffer[recv] = 0;
+            printf("Received data: '%s'\n", buffer);
             
             net_free(session);
 
@@ -84,6 +90,9 @@ int main(int argc, const char *argv[]) {
             session_t *session = net_init(ifname, dst_ip_addr, port, TCP);
             
             tcp_connect(session, dst_ip_addr, port);
+            tcp_send(session, (uint8_t*) buffer, strlen(buffer));
+            
+            continue;
             
             net_free(session);
         }
