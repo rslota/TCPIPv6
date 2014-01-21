@@ -48,10 +48,10 @@ session_t *net_init(const char *interface, const uint8_t ip_addr[],
     }
 
     // Save interface name for further use
+    s->interface = malloc(strlen(interface) + 1);
     strcpy(s->interface, interface);
 
     ndp_initialize(interface, ip_addr);
-
 
     return s;
 }
@@ -59,6 +59,7 @@ session_t *net_init(const char *interface, const uint8_t ip_addr[],
 int net_free(session_t *session)
 {
     const int err = hw_free(session->session_id);
+    free(session->interface);
     free(session);
     return err;
 }

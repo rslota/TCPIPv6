@@ -173,11 +173,11 @@ struct thread {
     pthread_t thread;
 };
 
-thread_t* thread_spawn(void*(*func)(void *data), void *data)
+thread_t* thread_spawn(void*(*func)(void*), void *data)
 {
     thread_t* t = malloc(sizeof(struct thread));
 
-    pthread_create( &t->thread, NULL, func, data);
+    pthread_create(&t->thread, NULL, func, data);
 
     return t;
 }

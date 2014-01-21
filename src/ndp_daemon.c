@@ -3,8 +3,9 @@
 #include "icmp.h"
 #include "net.h"
 
-#include <time.h>
+#include <memory.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define NDP_TABLE_MAX_SIZE 100000
 
@@ -241,4 +242,3 @@ void ndp_table_print()
         }
     }
 }
-
