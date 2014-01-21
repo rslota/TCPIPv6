@@ -29,7 +29,7 @@ static ndp_record_t*  ndp_table [ NDP_TABLE_MAX_SIZE ];
 
 static void *recv_loop(void *data)
 {
-    session_t *session = net_init(ifname, src_ip_addr, 0, ICMP);
+    session_t *session = net_init(ifname, src_ip_addr, 0, 0, 0, ICMP);
     icmp_packet_t packet;
     ndp_neighbor_discover_t n_discvr;
 

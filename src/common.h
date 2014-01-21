@@ -19,7 +19,7 @@ typedef struct tcp_session {
 
     uint32_t ack;
     uint32_t seq;
-    uint8_t  state; 
+    uint8_t  state;
     uint16_t port;
 
     uint32_t send_buf_seq;

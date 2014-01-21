@@ -14,7 +14,7 @@ typedef union PACKED ip_packet
     {
         struct PACKED
         {
-            uint32_t flow; // 4 bits version, 8 bits traffic class, 20 bits flow id
+            uint32_t flow; // 4b version, 8b traffic class, 20b flow id
             uint16_t payload_length;
             uint8_t  next_header;
             uint8_t  hop_limit;
@@ -57,7 +57,7 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[],
         return 0;
 
     session_t *icmp_session = net_init(session->interface, session->src_ip, 0,
-                                       ICMP);
+                                       0, 0, ICMP);
 
     ndp_neighbor_discover_t ndp;
     size_t recv;
@@ -136,7 +136,7 @@ size_t ip_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
     {
         if(packet.next_header == session->protocol &&
             (memcmp(packet.dst_ip, session->src_ip, IP_ADDR_LEN) == 0 ||
-             memcmp(packet.dst_ip, icmp_multicast_addr, IP_ADDR_LEN) == 0 ) ) // ICMP multicast addr
+             memcmp(packet.dst_ip, icmp_multicast_addr, IP_ADDR_LEN) == 0 ) )
             break;
     }
 

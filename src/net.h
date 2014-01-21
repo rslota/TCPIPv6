@@ -15,6 +15,7 @@
 typedef enum protocol
 {
 	TCP,
+    TCP_NOCONNECT,
 	UDP,
     ICMP
 } protocol_t;
@@ -23,13 +24,19 @@ typedef enum protocol
  * Initializes a new session.
  * @param interface The name of an interface used; the value varies depending
  * on the platform.
- * @param ip_addr The IP address to use as a source address.
- * @param port The port number to use as a source port for certain protocols.
+ * @param src_ip_addr The IP address to use as a source address.
+ * @param src_port The port number to use as a source port for certain
+ * protocols.
+ * @param dst_ip_addr The IP address of the remote host; used only for the TCP
+ * protocol.
+ * @param dst_port The port number of the remote host; used only for the TCP
+ * protocol.
  * @param protocol The protocol to use in the session.
  * @returns A pointer to the created session on success, 0 on error.
  */
-session_t *net_init(const char *interface, const uint8_t ip_addr[],
-                    uint16_t port, protocol_t protocol);
+session_t *net_init(const char *interface, const uint8_t src_ip_addr[],
+                    uint16_t src_port, const uint8_t dst_ip_addr[],
+                    uint16_t dst_port, protocol_t protocol);
 
 /**
  * Frees a session.
@@ -41,7 +48,8 @@ int net_free(session_t *session);
 /**
  * Sends data through the network.
  * @param session The session object created by net_init().
- * @param dst_ip The destination IP address for the data.
+ * @param dst_ip The destination IP address for the data. Ignored for TCP
+ * protocol.
  * @param dst_port The destination port for the data for certain protocols.
  * @param data The data to send through the network.
  * @param data_len The length of data.
