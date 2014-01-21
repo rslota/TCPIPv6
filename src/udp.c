@@ -37,10 +37,11 @@ size_t udp_send(session_t *session, const uint8_t dst_ip[], uint16_t dst_port,
     datagram.checksum = ip_chksum(session, dst_ip, IP_PROTOCOL_UDP,
                                   datagram.buffer, datagram_len);
 
-    return ip_send(session, dst_ip, IP_PROTOCOL_UDP, datagram.buffer, datagram_len);
+    return ip_send(session, dst_ip, IP_PROTOCOL_UDP, datagram.buffer,
+                   datagram_len);
 }
 
-/// @todo check checksum
+/// @todo Check checksum
 size_t udp_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
 {
     udp_datagram_t datagram;
@@ -49,8 +50,7 @@ size_t udp_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
     do
     {
         received = ip_recv(session, datagram.buffer, sizeof(datagram.buffer));
-        //printf("Recv: %d %d %d %d %d %d\n", session->port, hostb_s(datagram.dst_port), received, datagram.dst_port, netb_s(session->port), datagram.dst_port == netb_s(session->port));
-    } while(received != 0 && datagram.dst_port != (uint16_t)netb_s(session->port));
+    } while(received != 0 && datagram.dst_port != netb_s(session->port));
 
     const size_t data_len = MIN(received - UDP_HEADER_LEN, buffer_len);
     memcpy(buffer, datagram.data, data_len);

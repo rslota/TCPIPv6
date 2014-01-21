@@ -56,21 +56,34 @@ int main(int argc, const char *argv[]) {
             net_send(session, dst_ip_addr, port, (uint8_t*) buffer, strlen(buffer));
             net_free(session);
         } 
-        else if(strcmp(buffer, "tcp") == 0)
+        else if(strcmp(buffer, "listen") == 0)
         {
-            // Get line
-            if( scanf("%s %d %s", addr, &port, buffer) != 3 ) {
-                continue;
-            }
-            
-            if(!inet_from_str(addr, ip_addr)) {
-                fprintf(stderr, "Error: Invalid IPv6 addr !");
+            if( scanf("%d", &port) != 1 ) {
                 continue;
             }
 
-            session_t *session = net_init(ifname, port, TCP);
+            session_t *session = net_init(ifname, src_ip_addr, port, TCP);
             
-            tcp_connect(session, ip_addr, port);
+            tcp_listen(session, src_ip_addr, port);
+            
+            net_free(session);
+
+        }
+        else if(strcmp(buffer, "tcp") == 0)
+        {
+            // Get line
+            if( scanf("%s %d %s", dst_addr, &port, buffer) != 3 ) {
+                continue;
+            }
+            
+            if(!inet_pton(AF_INET6, dst_addr, dst_ip_addr)) {
+                fprintf(stderr, "Error: Invalid destination IPv6 addr!\n");
+                continue;
+            }
+
+            session_t *session = net_init(ifname, dst_ip_addr, port, TCP);
+            
+            tcp_connect(session, dst_ip_addr, port);
             
             net_free(session);
         }

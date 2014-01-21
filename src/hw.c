@@ -167,6 +167,11 @@ uint16_t hostb_s(uint16_t value)
     return ntohs(value);
 }
 
+uint32_t hostb_l(uint32_t value)
+{
+    return ntohl(value);
+}
+
 /* Threading */
 
 struct thread {

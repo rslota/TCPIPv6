@@ -75,6 +75,13 @@ uint16_t netb_s(uint16_t value);
 uint16_t hostb_s(uint16_t value);
 
 /**
+ * Converts a 4-byte value from network to host byte order.
+ * @param value The value to be converted from network byte order.
+ * @returns The value in host byte order.
+ */
+uint32_t hostb_l(uint32_t value);
+
+/**
  * Converts a 4-byte value from host to network byte order.
  * @param value The value to be converted to network byte order.
  * @returns The value in network byte order.
