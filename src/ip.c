@@ -1,10 +1,11 @@
 #include "ip.h"
-#include "icmp.h"
-#include "net.h"
-#include "ndp_daemon.h"
 
 #include "eth.h"
 #include "hw.h"
+#include "icmp.h"
+#include "ndp_daemon.h"
+#include "net.h"
+
 #include <memory.h>
 
 typedef union PACKED ip_packet
@@ -29,17 +30,16 @@ typedef union PACKED ip_packet
 
 } ip_packet_t;
 
-static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr[])
+static int ip_to_hw(session_t *session, const uint8_t ip_addr[],
+                    uint8_t hw_addr[])
 {
     // Multicast addr case:
     if(ip_addr[0] == 0xff)
     {
         static uint8_t multicast_addr[] = { 0x33, 0x33, 0x0, 0x0, 0x0, 0x0 };
 
-        //uint8_t flags = (ip_addr[1] & 0xf0) >> 4;
-        //uint8_t scope = (ip_addr[1] & 0x0f);
-
-        memcpy(multicast_addr + 2, ip_addr + IP_ADDR_LEN - 4, 4); // Multicast mapping: http://tools.ietf.org/html/rfc2464#page-4
+        // Multicast mapping: http://tools.ietf.org/html/rfc2464#page-4
+        memcpy(multicast_addr + 2, ip_addr + IP_ADDR_LEN - 4, 4);
         memcpy(hw_addr, multicast_addr, ETH_ADDR_LEN);
 
         return 0;
@@ -56,7 +56,8 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr
     if(ndp_table_lookup(ip_addr, hw_addr))
         return 0;
 
-    session_t *icmp_session = net_init(session->interface, session->src_ip, 0, ICMP);
+    session_t *icmp_session = net_init(session->interface, session->src_ip, 0,
+                                       ICMP);
 
     ndp_neighbor_discover_t ndp;
     size_t recv;
@@ -69,14 +70,15 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr
     }
 
     if(!recv)
-        return 0;
+        return -1;
 
     ndp_option_t option;
-    memcpy(option.buffer, ndp.options, recv - offsetof(ndp_neighbor_discover_t, options));
+    memcpy(option.buffer, ndp.options, recv - NDP_ND_HEADER_LEN);
     if(option.type != NDP_TARGET_LINK_ADDR_OPT || option.len != 1)
     {
-        fprintf(stderr, "Error: unsupported option type for NDP protocol: %d with len: %d\n", option.type, option.len);
-        return 0;
+        fprintf(stderr, "Error: unsupported option type for NDP protocol: %d "
+                        "with len: %d\n", option.type, option.len);
+        return -1;
     }
 
     net_free(icmp_session);
@@ -84,10 +86,6 @@ static int ip_to_hw(session_t *session, const uint8_t ip_addr[], uint8_t hw_addr
     memcpy(hw_addr, option.body, ETH_ADDR_LEN);
 
     ndp_table_insert(ip_addr, hw_addr);
-
-    //printf("DEBUG: NDP returned hw_addr: %02x:%02x:%02x:%02x:%02x:%02x for ip_addr: %04x::%04x::%04x::%04x::%04x::%04x::%04x::%04x\n",
-    //    hw_addr[0], hw_addr[1], hw_addr[2], hw_addr[3], hw_addr[4], hw_addr[5],
-    //    ((uint16_t*)ip_addr)[0], ((uint16_t*)ip_addr)[1], ((uint16_t*)ip_addr)[2], ((uint16_t*)ip_addr)[3], ((uint16_t*)ip_addr)[4], ((uint16_t*)ip_addr)[5], ((uint16_t*)ip_addr)[6], ((uint16_t*)ip_addr)[7]);
 
     return 0;
 }
@@ -125,7 +123,11 @@ size_t ip_send(session_t *session, const uint8_t dst_ip[], uint8_t protocol,
 size_t ip_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
 {
     ip_packet_t packet;
-    static uint8_t icmp_multicast_addr[IP_ADDR_LEN] = { 0xff, 0x02, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0xff, 0x0, 0x0, 0x0 };
+    static uint8_t
+        icmp_multicast_addr[IP_ADDR_LEN] = { 0xff, 0x02, 0x0, 0x0, 0x0, 0x0,
+                                             0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0xff,
+                                             0x0, 0x0, 0x0 };
+
     memcpy(icmp_multicast_addr + 13, session->src_ip + 13, 3);
 
     size_t received;
@@ -151,11 +153,9 @@ size_t ip_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
 
 #define PSEUDO_PACKET_HEADER_LEN (2 * IP_ADDR_LEN + 8)
 
-/**
- * @todo copying the whole packet data in order to calculate the checksum is far
- * from the most efficient implementation, but it's one of the most convenient
- * ones.
- */
+// Copying the whole packet data in order to calculate the checksum is far
+// from the most efficient implementation, but it's one of the most convenient
+// ones.
 typedef union PACKED pseudo_packet
 {
     struct PACKED
@@ -172,11 +172,11 @@ typedef union PACKED pseudo_packet
 
 } pseudo_packet_t;
 
-/**
- * @todo grossly inefficient. It's better to accumulate in uint32_t value, and
- * continue adding first 2 bytes to last 2 bytes until the first 2 bytes are 0
- * (which is at most 2 times).
- */
+
+// Inefficient. It's better to accumulate in uint32_t value, and
+// continue adding first 2 bytes to last 2 bytes until the first 2 bytes are 0
+// (which is at most 2 times). On the other hand, the checksumming is normally
+// done by the hardware (checksum offloading).
 static uint16_t add_with_carry(uint16_t acc, uint16_t val)
 {
     // The condition in ternary op checks for overflow without casting.
