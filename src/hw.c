@@ -152,17 +152,17 @@ size_t hw_recv(int session_id, uint8_t buffer[], size_t buffer_len)
 	return recv(session_id, buffer, buffer_len, 0);
 }
 
-int16_t netb_s(int16_t value)
+uint16_t netb_s(uint16_t value)
 {
 	return htons(value);
 }
 
-int32_t netb_l(int32_t value)
+uint32_t netb_l(uint32_t value)
 {
 	return htonl(value);
 }
 
-int16_t hostb_s(int16_t value)
+uint16_t hostb_s(uint16_t value)
 {
     return ntohs(value);
 }

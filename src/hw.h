@@ -65,21 +65,21 @@ size_t hw_recv(int session_id, uint8_t buffer[], size_t buffer_len);
  * @param value The value to be converted to network byte order.
  * @returns The value in network byte order.
  */
-int16_t netb_s(int16_t value);
+uint16_t netb_s(uint16_t value);
 
 /**
  * Converts a 2-byte value from network to host byte order.
  * @param value The value to be converted from network byte order.
  * @returns The value in host byte order.
  */
-int16_t hostb_s(int16_t value);
+uint16_t hostb_s(uint16_t value);
 
 /**
  * Converts a 4-byte value from host to network byte order.
  * @param value The value to be converted to network byte order.
  * @returns The value in network byte order.
  */
-int32_t netb_l(int32_t value);
+uint32_t netb_l(uint32_t value);
 
 typedef struct thread thread_t;
 
