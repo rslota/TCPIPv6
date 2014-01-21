@@ -46,9 +46,10 @@ size_t ip_recv(session_t *session, uint8_t buffer[], const size_t buffer_len);
  * @param dst_ip The destination IP address of the IP datagram.
  * @param protocol The protocol number corresponding to the used transport
  * layer protocol.
- * @param ip_data The whole payload of the resulting IP packet, except any
+ * @param data The whole payload of the resulting IP packet, except any
  * extension headers; the checksum field must be 0. The data needs to be in the
  * network byte order.
+ * @param data_len The length of data.
  * @returns The calculated checksum to place in transport layer's header.
  * @note The calculated checksum is already in the network byte order.
  */
