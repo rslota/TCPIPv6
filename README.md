@@ -67,5 +67,5 @@ net_free(session);
 
 The headers are fully documented in-code using Doxygen. The documentation can
 be generated using the `make doc` command. `build/doc/Doxyfile.in` will contain
-default Doxygen settings for the project. By default HTMLa and LaTeX
-documentation is generated.
+default Doxygen settings for the project. By default HTML and LaTeX
+documentation are generated.
