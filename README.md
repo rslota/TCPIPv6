@@ -8,9 +8,9 @@ functions that have to be provided by a target platform. An implementation for
 x86 Linux-based platform is provided in `hw.c` file.
 
 The stack was created as an academic research project. It doesn't implement the
-whole TCP/IPv6 specification. Particularly no optional IPv6 are supported, and
-the TCPv6 implementation is incomplete (although functional). The code is not
-intended for production use.
+whole TCP/IPv6 specification. Particularly no optional IPv6 headers are
+supported, and the TCPv6 implementation is incomplete (although functional).
+The code is not intended for production use.
 
 ### Compilation
 
