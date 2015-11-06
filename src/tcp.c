@@ -1,3 +1,30 @@
+/**
+ * @copyright Copyright © 2013-2014, Rafał Słota, Konrad Zemek
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include "tcp.h"
 #include "hw.h"
 #include "net.h"
@@ -39,7 +66,7 @@ typedef union PACKED tcp_header {
 
 } tcp_header_t;
 
-void* send_worker(void *s) 
+void* send_worker(void *s)
 {
     session_t *session = (session_t*) s;
     tcp_session_t *tcp = &session->tcp;
@@ -60,7 +87,7 @@ void* send_worker(void *s)
         hdr.seq_num = netb_l( tcp->seq );
         hdr.data_offset = TCP_MIN_HEADER_SIZE << 4;
         hdr.flags = 0;
-        hdr.window_size = netb_s(1000); 
+        hdr.window_size = netb_s(1000);
         hdr.urg_pointer = 0;
         hdr.checksum = 0;
 
@@ -77,7 +104,7 @@ void* send_worker(void *s)
     return 0;
 }
 
-void* recv_worker(void *s) 
+void* recv_worker(void *s)
 {
     session_t *session = (session_t*) s;
     tcp_session_t *tcp = &session->tcp;
@@ -115,7 +142,7 @@ void* recv_worker(void *s)
 
             uint8_t *data = rcv.buffer + d_offset;
             size_t d_len = res - d_offset;
-           
+
             if(hostb_l(rcv.seq_num) == tcp->rcv_seq)
             {
                 memcpy(tcp->recv_buffer + tcp->recv_buf_end, data, d_len);
@@ -163,7 +190,7 @@ void* recv_worker(void *s)
                 hdr.seq_num = netb_l( 1 );
                 hdr.data_offset = TCP_MIN_HEADER_SIZE << 4;
                 hdr.flags = ACK_FLAG;
-                hdr.window_size = netb_s(1000); 
+                hdr.window_size = netb_s(1000);
                 hdr.urg_pointer = 0;
                 hdr.checksum = 0;
 
@@ -171,7 +198,7 @@ void* recv_worker(void *s)
                 ip_send(session, tcp->dst_ip, IP_PROTOCOL_TCP, hdr.buffer, TCP_MIN_HEADER_SIZE * WORD_SIZE);
             }
 
-            
+
         }
     }
 
@@ -197,7 +224,7 @@ size_t tcp_connect(session_t *session, const uint8_t dst_ip[], uint16_t dst_port
     hdr.seq_num = netb_l(1);
     hdr.data_offset = TCP_MIN_HEADER_SIZE << 4;
     hdr.flags = SYN_FLAG;
-    hdr.window_size = netb_s(1000); 
+    hdr.window_size = netb_s(1000);
     hdr.urg_pointer = 0;
     hdr.checksum = 0;
 
@@ -213,7 +240,7 @@ size_t tcp_connect(session_t *session, const uint8_t dst_ip[], uint16_t dst_port
     // SYN-ACK
     while((res = ip_recv(session, rcv.buffer, TCP_MIN_HEADER_SIZE * WORD_SIZE)) > 0)
     {
-        if((rcv.flags & ACK_FLAG) && (rcv.flags & SYN_FLAG) 
+        if((rcv.flags & ACK_FLAG) && (rcv.flags & SYN_FLAG)
             && rcv.ack_num == netb_l(hostb_l(hdr.seq_num) + 1)
             && rcv.dest_port == netb_s(session->tcp.port)
             && rcv.src_port == netb_s(dst_port))
