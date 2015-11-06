@@ -76,6 +76,7 @@ void* send_worker(void *s)
     {
         if(tcp->send_buf_seq >= tcp->send_buf_end)
         {
+            sem_wait(&tcp->send_notify_sem);
             continue;
         }
 
@@ -148,6 +149,7 @@ void* recv_worker(void *s)
                 memcpy(tcp->recv_buffer + tcp->recv_buf_end, data, d_len);
                 tcp->recv_buf_end += d_len;
                 tcp->rcv_seq += d_len;
+                sem_post(&tcp->recv_notify_sem);
             }
             else
             {
@@ -175,6 +177,7 @@ void* recv_worker(void *s)
                     memcpy(tcp->recv_buffer + tcp->recv_buf_end, tcp->recv_queue[i]->data, tcp->recv_queue[i]->size);
                     tcp->recv_buf_end += tcp->recv_queue[i]->size;
                     tcp->rcv_seq += tcp->recv_queue[i]->size;
+                    sem_post(&tcp->recv_notify_sem);
 
                     free(tcp->recv_queue[i]);
                     tcp->recv_queue[i] = 0;
@@ -270,6 +273,10 @@ size_t tcp_connect(session_t *session, const uint8_t dst_ip[], uint16_t dst_port
 
     session->tcp.ack = hostb_l(hdr.ack_num);
     session->tcp.rcv_seq = hostb_l(rcv.seq_num) + 1;
+
+    if(sem_init(&session->tcp.recv_notify_sem, 0, 0) != 0)
+        return 0;
+
     session->tcp.state = TCP_STATE_ESTABLISHED;
 
     thread_spawn(&recv_worker, (void*)session);
@@ -345,6 +352,9 @@ session_t *tcp_listen(session_t *session, const uint8_t bind_ip[], uint16_t bind
     nsess->tcp.port = nsess->port;
     memcpy(nsess->tcp.dst_ip, session->last_sender_ip, IP_ADDR_LEN);
 
+    if(sem_init(&nsess->tcp.recv_notify_sem, 0, 0) != 0)
+        return 0;
+
     thread_spawn(&recv_worker, (void*)nsess);
     thread_spawn(&send_worker, (void*)nsess);
 
@@ -370,6 +380,7 @@ size_t tcp_send(session_t *session, const uint8_t data[], size_t data_len)
         queued = TCP_BUFFER_SIZE - session->tcp.send_buf_end ;
     memcpy(session->tcp.send_buffer + session->tcp.send_buf_end, data, queued);
     session->tcp.send_buf_end += queued;
+    sem_post(&session->tcp.send_notify_sem);
 
     return queued;
 }
@@ -381,7 +392,7 @@ size_t tcp_recv(session_t *session, uint8_t buffer[], size_t buffer_len)
 
     while(session->tcp.recv_buf_seq >= session->tcp.recv_buf_end)
     {
-        // @todo: sleep or wait
+        sem_wait(&session->tcp.recv_notify_sem);
     }
 
     size_t recv_size = MIN(buffer_len, session->tcp.recv_buf_end - session->tcp.recv_buf_seq);
@@ -396,6 +407,7 @@ size_t tcp_close(session_t *session)
     if(session->tcp.state != TCP_STATE_ESTABLISHED)
         return 0;
 
+    sem_destroy(&session->tcp.recv_notify_sem);
     session->tcp.state = TCP_STATE_CLOSED;
 
     return 1;

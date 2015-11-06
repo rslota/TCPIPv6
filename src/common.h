@@ -31,6 +31,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <semaphore.h>
 
 #define ETH_ADDR_LEN      6
 #define ETH_PROTOCOL_IPV6 0x86DD
@@ -70,6 +71,10 @@ typedef struct tcp_session {
     uint32_t recv_buf_end;
     uint32_t recv_buf_seq;
     uint8_t  recv_buffer[TCP_BUFFER_SIZE];
+
+    // Semaphores for notifying about pending bytes
+    sem_t recv_notify_sem;
+    sem_t send_notify_sem;
 
 } tcp_session_t;
 
